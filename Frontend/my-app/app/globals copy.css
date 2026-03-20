@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #f5f5f5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont,
+    "SF Pro Text", "SF Pro Display", "Inter", sans-serif;
+  margin: 0;
+}
+
+.text-glow {
+  text-shadow:
+    0 0 10px rgba(15, 23, 42, 0.85),
+    0 0 26px rgba(15, 23, 42, 0.85),
+    0 0 52px rgba(56, 189, 248, 0.55);
+}
+
+.neural-spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  border-width: 2px;
+  border-style: solid;
+  border-top-color: rgba(255, 255, 255, 0.95);
+  border-right-color: rgba(255, 255, 255, 0.45);
+  border-bottom-color: rgba(255, 255, 255, 0.25);
+  border-left-color: rgba(255, 255, 255, 0.1);
+  animation: spin 0.9s linear infinite;
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(0, 180, 255, 0.28);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.touch-pan-y {
+  touch-action: pan-y;
+}
