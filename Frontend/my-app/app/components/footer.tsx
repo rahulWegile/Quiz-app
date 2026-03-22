@@ -34,7 +34,7 @@ export default function Footer() {
         .ft-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: 16px; }
         .ft-logo-badge {
           width: 36px; height: 36px; border-radius: 10px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, #000000, #000000);
           display: flex; align-items: center; justify-content: center;
           font-size: 18px; flex-shrink: 0;
           box-shadow: 0 4px 12px rgba(99,102,241,0.4);

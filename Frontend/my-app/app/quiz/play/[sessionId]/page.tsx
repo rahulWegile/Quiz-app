@@ -24,7 +24,13 @@ export default function Play() {
   const [timerKey, setTimerKey] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+
+  // ── Per-question timer (counts up with interval, same as before)
   const timeTakenRef = useRef(0)
+
+  // ── Total real time: record when quiz actually started
+  const quizStartTimeRef = useRef<number | null>(null)
+
   const hasSubmittedRef = useRef(false)
   const answersRef = useRef<Answer[]>([])
 
@@ -44,7 +50,10 @@ export default function Play() {
         const data = await res.json()
         if (!data.success && data.paymentRequired) { router.push(`/payment?session_id=${sessionId}`); return }
         if (!data.success) { setError(data.message || "Failed to load session"); setLoading(false); return }
-        setQuestions(data.data); setLoading(false)
+        setQuestions(data.data)
+        setLoading(false)
+        // ── Start the real-time clock the moment questions are ready
+        quizStartTimeRef.current = Date.now()
       } catch { setError("Something went wrong"); setLoading(false) }
     }
     fetchSession()
@@ -52,15 +61,26 @@ export default function Play() {
 
   useEffect(() => { answersRef.current = answers }, [answers])
 
+  const getTotalTimeTaken = () => {
+    if (!quizStartTimeRef.current) return 0
+    return Math.round((Date.now() - quizStartTimeRef.current) / 1000)
+  }
+
   const handleSubmit = useCallback(async (finalAnswers?: Answer[]) => {
     if (hasSubmittedRef.current) return
-    hasSubmittedRef.current = true; setSubmitting(true)
+    hasSubmittedRef.current = true
+    setSubmitting(true)
+    const totalTime = getTotalTimeTaken() // ← real elapsed seconds
     try {
       const token = getToken()
       const res = await fetch(`${API}/api/quiz/submit`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, answers: finalAnswers ?? answersRef.current, time_taken: timeTakenRef.current })
+        body: JSON.stringify({
+          session_id: sessionId,
+          answers: finalAnswers ?? answersRef.current,
+          time_taken: totalTime   // ← send actual time, not accumulated 20s chunks
+        })
       })
       const data = await res.json()
       router.push(`/quiz/result/${data.data.attemptId}`)
@@ -69,6 +89,7 @@ export default function Play() {
 
   useEffect(() => { setTimerKey(k => k + 1); setSelected(null) }, [currentIndex])
 
+  // ── Per-question countdown (only drives the UI timer bar, no longer used for time_taken)
   useEffect(() => {
     if (loading || submitting) return
     setQuestionTimeLeft(20)
@@ -77,7 +98,10 @@ export default function Play() {
       setQuestionTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer)
-          setCurrentIndex((ci) => { if (ci + 1 >= questions.length) handleSubmit(); return ci + 1 < questions.length ? ci + 1 : ci })
+          setCurrentIndex((ci) => {
+            if (ci + 1 >= questions.length) handleSubmit()
+            return ci + 1 < questions.length ? ci + 1 : ci
+          })
           return 20
         }
         return prev - 1
@@ -152,7 +176,6 @@ export default function Play() {
         }
         .play-card-top { height: 5px; position: absolute; top: 0; left: 0; right: 0; border-radius: 28px 28px 0 0; transition: background 0.5s; }
 
-        /* TOP BAR */
         .play-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
         .play-q-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #9ca3af; }
         .play-q-num { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 900; color: #1e1b4b; }
@@ -164,17 +187,14 @@ export default function Play() {
           border: 1.5px solid; transition: all 0.3s;
         }
 
-        /* PROGRESS */
         .play-prog-track { width: 100%; height: 5px; background: #f3f4f6; border-radius: 100px; margin-bottom: 6px; overflow: hidden; }
         .play-prog-fill { height: 100%; border-radius: 100px; background: #e0e7ff; transition: width 0.3s ease; }
         .play-timer-track { width: 100%; height: 4px; background: #f3f4f6; border-radius: 100px; overflow: hidden; margin-bottom: 32px; }
         .play-timer-fill { height: 100%; border-radius: 100px; transition: width 1s linear, background 0.3s; }
 
-        /* QUESTION */
         .play-q-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #c7d2fe; margin-bottom: 10px; }
         .play-q-text { font-family: 'Fraunces', serif; font-size: clamp(18px, 2.5vw, 23px); font-weight: 900; font-style: italic; color: #1e1b4b; line-height: 1.4; margin-bottom: 30px; letter-spacing: -0.01em; }
 
-        /* OPTIONS */
         .play-options { display: flex; flex-direction: column; gap: 10px; }
         .play-option {
           display: flex; align-items: center; gap: 14px;
@@ -198,7 +218,6 @@ export default function Play() {
         .play-opt-text { font-size: 15px; font-weight: 500; color: #374151; line-height: 1.4; transition: color 0.18s; }
         .play-option:hover:not(:disabled) .play-opt-text, .play-option.selected .play-opt-text { color: #1e1b4b; }
 
-        /* DOTS */
         .play-dots-row { display: flex; justify-content: center; gap: 6px; margin-top: 28px; }
         .play-dot { height: 6px; border-radius: 3px; transition: all 0.25s; }
         .play-dot.done { width: 6px; background: #6366f1; border-radius: 50%; }
@@ -216,7 +235,6 @@ export default function Play() {
         <div className="play-card">
           <div className="play-card-top" style={{ background: timerColor }} />
 
-          {/* TOP BAR */}
           <div className="play-topbar">
             <div>
               <div className="play-q-label">Question</div>
@@ -227,7 +245,6 @@ export default function Play() {
             </div>
           </div>
 
-          {/* PROGRESS BARS */}
           <div className="play-prog-track">
             <div className="play-prog-fill" style={{ width: `${(currentIndex / questions.length) * 100}%`, background: `${timerColor}40` }} />
           </div>
@@ -235,11 +252,9 @@ export default function Play() {
             <div className="play-timer-fill" style={{ width: `${timerPct}%`, background: timerColor }} />
           </div>
 
-          {/* QUESTION */}
           <div className="play-q-eyebrow">Q{currentIndex + 1} of {questions.length}</div>
           <div className="play-q-text">{q?.question_text}</div>
 
-          {/* OPTIONS */}
           <div className="play-options">
             {(["option_a", "option_b", "option_c", "option_d"] as const).map((opt, i) => (
               <button
@@ -257,7 +272,6 @@ export default function Play() {
             ))}
           </div>
 
-          {/* DOTS */}
           <div className="play-dots-row">
             {questions.map((_, i) => (
               <div key={i} className={`play-dot ${i < currentIndex ? "done" : i === currentIndex ? "current" : "pending"}`}

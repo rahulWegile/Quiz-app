@@ -193,14 +193,14 @@ export default function Quiz() {
         .badge-live { background: rgba(20,184,166,0.1); color: #0d9488; border: 1px solid rgba(20,184,166,0.25); }
         .badge-up   { background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.2); }
 
-        // .qz-live-dot { width: 7px; height: 7px; background: #14b8a6; border-radius: 50%; animation: qzpulse 1.5s infinite; }
-        // .qz-topic { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 800; color: #1e1b4b; margin-bottom: 3px; }
-        // .qz-subj { font-size: 11px; color: #d1d5db; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
-        // .qz-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-        // .qz-time { font-size: 12px; color: #9ca3af; }
-        // .qz-countdown { font-size: 13px; color: #6366f1; font-weight: 700; font-variant-numeric: tabular-nums; }
-        // .qz-live-txt { font-size: 13px; color: #0d9488; font-weight: 700; }
-        // .qz-reg { font-size: 11px; color: #d1d5db; }
+        .qz-live-dot { width: 7px; height: 7px; background: #14b8a6; border-radius: 50%; animation: qzpulse 1.5s infinite; }
+        .qz-topic { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 800; color: #1e1b4b; margin-bottom: 3px; }
+        .qz-subj { font-size: 11px; color: #d1d5db; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
+        .qz-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .qz-time { font-size: 12px; color: #9ca3af; }
+        .qz-countdown { font-size: 13px; color: #6366f1; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .qz-live-txt { font-size: 13px; color: #0d9488; font-weight: 700; }
+        .qz-reg { font-size: 11px; color: #d1d5db; }
 
         /* BUTTONS */
         .qz-btn { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; transition: all 0.18s; white-space: nowrap; flex-shrink: 0; }
@@ -263,33 +263,32 @@ export default function Quiz() {
 
         <div className="qz-body">
           {/* SESSIONS */}
-          {/* SESSIONS */}
-{upcomingSessions.length === 0 ? (
-  <div style={{ marginBottom: 52 }}>
-    <div className="qz-eyebrow">Live & Scheduled</div>
-    <div className="qz-sec-title">Upcoming Battles</div>
-    <div className="qz-empty">
-      <div className="qz-empty-icon">🎯</div>
-      <div className="qz-empty-title">No battles scheduled yet</div>
-      <p className="qz-empty-sub">
-        Check back soon — new quizzes are added regularly.<br />
-      
-      </p>
-    </div>
-  </div>
-) : (
-  <div style={{ marginBottom: 52 }}>
-    <div className="qz-eyebrow">Live & Scheduled</div>
-    <div className="qz-sec-title">Upcoming Battles</div>
-    <div className="qz-sessions">
-      {upcomingSessions.map((session) => (
-        <div key={session.id} className={`qz-session-card ${session.status === "active" ? "live" : "upcoming"}`}>
-          {/* ...rest of your session card... */}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+          {upcomingSessions.length > 0 && (
+            <div style={{ marginBottom: 52 }}>
+              <div className="qz-eyebrow">Live & Scheduled</div>
+              <div className="qz-sec-title">Upcoming Battles</div>
+              <div className="qz-sessions">
+                {upcomingSessions.map((session) => (
+                  <div key={session.id} className={`qz-session-card ${session.status === "active" ? "live" : "upcoming"}`}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className={`qz-session-badge ${session.status === "active" ? "badge-live" : "badge-up"}`}>
+                        {session.status === "active" ? <><span className="qz-live-dot" />Live Now</> : "⏰ Upcoming"}
+                      </div>
+                      <div className="qz-topic">{session.topic_name}</div>
+                      <div className="qz-subj">{session.subject_name}</div>
+                      <div className="qz-meta">
+                        <span className="qz-time">📅 {new Date(session.scheduled_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })}</span>
+                        {session.status === "upcoming" && <span className="qz-countdown">⏳ {getTimeUntil(session.scheduled_at)}</span>}
+                        {session.status === "active" && <span className="qz-live-txt">🟢 In Progress</span>}
+                        <span className="qz-reg">{session.registered_count} joined</span>
+                      </div>
+                    </div>
+                    <div>{renderActionButton(session)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
       
          
