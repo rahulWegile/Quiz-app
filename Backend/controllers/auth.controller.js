@@ -72,7 +72,7 @@ return res.status(200).json({
     if (err.code === "23505") {
         return res.status(409).json({
             success: false,
-            message: "Email already registered"
+            message: "userName or Email already registered"
         });
     }
     
@@ -111,12 +111,12 @@ export const verifyEmail = async (req, res) => {
 
 //user login 
 export const userLogin = async (req, res) => {
-  const { email, password,captchaToken } = req.body;
+  const { email, password,token } = req.body;
   try{
-        const verify = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`)
+        const verify = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`)
         const result = await verify.json()
         
-        if (!result.success || result.score < 0.5) {
+        if (!result.success || result.score < 0.2) {
             return res.status(400).json({ 
                 success: false, 
                 message: "Bot detected. Please try again." 

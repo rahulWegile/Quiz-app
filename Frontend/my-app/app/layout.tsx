@@ -19,12 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <CaptchaProvider>        {/* ✅ wraps everything */}
-          <Navigation>
-            {children}
-          </Navigation>
-        </CaptchaProvider>
-        <Footer/>
+       <CaptchaProvider>
+  <Navigation>
+    {children}
+  </Navigation>
+  <Footer />
+</CaptchaProvider>
       </body>
     </html>
   );

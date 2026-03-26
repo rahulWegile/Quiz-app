@@ -1,6 +1,4 @@
-// ============================================================
-// RESULT PAGE  →  app/quiz/result/[attemptId]/page.tsx
-// ============================================================
+
 "use client"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -63,7 +61,7 @@ export default function Result() {
       if (remaining <= 0) { setLeaderboardLoading(false); setTimeLeft(0); return }
       setTimeLeft(remaining)
     } else { localStorage.setItem(key, now.toString()); setTimeLeft(120) }
-  }, [attemptId])
+  }, [attemptId,])
 
   useEffect(() => {
     if (!leaderboardLoading) return
