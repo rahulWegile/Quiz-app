@@ -44,44 +44,82 @@ export const postQuestion = async (req,res)=>{
 //bulk upload
 
 
-export const postQuestions = async (req,res)=>{
- const questions =req.body.questions
-    const uploaded_by=req.user.id
-    try{
+// export const postQuestions = async (req,res)=>{
+//  const questions =req.body.questions
+//     const uploaded_by=req.user.id
+//     try{
 
-        const duplicate = await checkDuplicate(question_text)
-        if(duplicate){
-            return res.status(403).json({
-            success:false,
-            message:"questions already exists"
-        })
-        }
+//         // const duplicate = await checkDuplicate(question_text)
+//         // if(duplicate){
+//         //     return res.status(403).json({
+//         //     success:false,
+//         //     message:"questions already exists"
+//         // })
+//         // }
 
-        const bulkquestions= await bulkUpload(questions,uploaded_by)
+//         const bulkquestions= await bulkUpload(questions,uploaded_by)
 
-        if(!bulkquestions){
+//         if(!bulkquestions){
             
             
-            return res.status(403).json({
-            success:false,
-            message:"insertion failed"
-        })
-        }
+//             return res.status(403).json({
+//             success:false,
+//             message:"insertion failed"
+//         })
+//         }
         
 
-         return res.status(200).json({
-            success:true,
-            message:"questions  inserted successfull",
-            data:bulkquestions
-        })
-    }catch(err){
-        console.error(err);
-        return res.status(403).json({
-            success:false,
-            message:"insertion failed"
+//          return res.status(200).json({
+//             success:true,
+//             message:"questions  inserted successfull",
+//             data:bulkquestions
+//         })
+//     }catch(err){
+//         console.error(err);
+//         return res.status(403).json({
+//             success:false,
+//             message:"insertion failed"
 
-        })
+//         })
+//     }
+// }
+
+
+export const postQuestions = async (req, res) => {
+  const questions = req.body.questions;
+  const uploaded_by = req.user.id;
+
+  try {
+    // Check every question for duplicates before touching the DB
+    for (const question of questions) {
+      const duplicate = await checkDuplicate(question.question_text); // ← scoped correctly
+      if (duplicate) {
+        return res.status(409).json({
+          success: false,
+          message: `Duplicate questions`,
+        });
+      }
     }
-}
 
+    const bulkquestions = await bulkUpload(questions, uploaded_by);
 
+    if (!bulkquestions) {
+      return res.status(500).json({
+        success: false,
+        message: "Insertion failed",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Questions inserted successfully",
+      data: bulkquestions,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Insertion failed",
+    });
+  }
+};
