@@ -251,3 +251,59 @@ export const getUserRegistrations = async (user_id) => {
     const { rows } = await query(sql, [user_id])
     return rows.map(r => r.session_id)
 }
+
+
+export const getSessionsByTopicId = async (topic_id) => {
+  const result = await query(
+    "SELECT id FROM quiz_sessions WHERE topic_id = $1",
+    [topic_id]
+  );
+  return result.rows;
+};
+
+export const deleteSessionsByTopicId = async (topic_id) => {
+  const result = await query(
+    "DELETE FROM quiz_sessions WHERE topic_id = $1 RETURNING *",
+    [topic_id]
+  );
+  return result.rows;
+};
+export const deleteRegistrationsBySessionId = async (session_id) => {
+  const result = await query(
+    "DELETE FROM quiz_registrations WHERE session_id = $1 RETURNING *",
+    [session_id]
+  );
+  return result.rows;
+};
+
+export const deleteSessionQuestionsBySessionId = async (session_id) => {
+  const { rows } = await query(
+    "DELETE FROM quiz_session_questions WHERE session_id = $1 RETURNING *",
+    [session_id]
+  );
+  return rows;
+};
+
+export const getAttemptsBySessionId = async (session_id) => {
+  const { rows } = await query(
+    "SELECT id FROM quiz_attempts WHERE session_id = $1",
+    [session_id]
+  );
+  return rows;
+};
+
+export const deleteAnswersByAttemptId = async (attempt_id) => {
+  const { rows } = await query(
+    "DELETE FROM quiz_answers WHERE attempt_id = $1 RETURNING *",
+    [attempt_id]
+  );
+  return rows;
+};
+
+export const deleteAttemptsBySessionId = async (session_id) => {
+  const { rows } = await query(
+    "DELETE FROM quiz_attempts WHERE session_id = $1 RETURNING *",
+    [session_id]
+  );
+  return rows;
+};

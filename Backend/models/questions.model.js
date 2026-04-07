@@ -198,3 +198,11 @@ export const updateQuestion = async (question_id, fields) => {
   const { rows } = await query(sql, [question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, question_id]);
   return rows[0];
 };
+
+export const deleteQuestionsByTopicId = async (topic_id) => {
+  const {rows} = await query(
+    "DELETE FROM questions WHERE topic_id = $1 RETURNING *",
+    [topic_id]
+  );
+  return rows;
+};
