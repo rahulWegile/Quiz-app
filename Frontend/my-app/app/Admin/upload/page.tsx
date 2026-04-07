@@ -133,12 +133,9 @@ export default function BulkUpload() {
 
   const data = await res.json();
 
-  // 👇 HANDLE DUPLICATES HERE
-  if (!data.success || data.duplicates?.length > 0) {
-    throw new Error(
-      data.message || 
-      `Duplicate questions found: ${data.duplicates?.length || 0}`
-    );
+  // ✅ HANDLE HTTP ERRORS (like 409)
+  if (!res.ok) {
+    throw new Error(data.message || "Upload failed");
   }
 
   return data;
