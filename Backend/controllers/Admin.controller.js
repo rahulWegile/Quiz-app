@@ -14,13 +14,13 @@ export const questionStatus = async(req,res)=>{
 
         return res.status(200).json({
             
-            success:"true",
+            success:true,
             message :'questions fetched succesfully',
             data:question
         })
     }catch(err){
         return res.status(403).json({
-            success:"false",
+            success:false,
         })
     }
 }
@@ -38,13 +38,13 @@ export const questionStatusRejected = async(req,res)=>{
 
         return res.status(200).json({
             
-            success:"true",
+            success:true,
             message :'questions fetched succesfully',
             data:question
         })
     }catch(err){
         return res.status(403).json({
-            success:"false",
+            success:false,
         })
     }
 }
@@ -139,13 +139,13 @@ export const getAllQuestionsAdmin = async(req,res)=>{
 
 
         return res.status(200).json({
-            success:"true",
+            success:true,
             message:"questions fetched succesfully",
             data:questions
         })
     }catch(err){
         return res.status(403).json({
-            success:"false",
+            success:false,
         })
     }
 }
@@ -159,13 +159,13 @@ export const   updateBulk  = async(req,res)=>{
 
 
         return res.status(200).json({
-            success:"true",
+            success:true,
             message:"questions updated",
             data:questions
         })
     }catch(err){
         return res.status(403).json({
-            success:"false",
+            success:false,
         })
     }
 }

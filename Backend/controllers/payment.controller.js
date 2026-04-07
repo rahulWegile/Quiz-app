@@ -7,7 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 export const payment = async (req, res) => {
 
      console.log("💳 Payment hit — user:", req.user?.id, "session:", req.body?.session_id)
-    console.log("Stripe key starts with:", process.env.STRIPE_SECRET_KEY?.substring(0, 10))
    
    const { session_id, mode } = req.body
     const user_id = req.user.id        
