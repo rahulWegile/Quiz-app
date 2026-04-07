@@ -97,7 +97,7 @@ export const updateStatusReject = async(req,res)=>{
             data:updated
         })
     }catch(err){
-        return res.status(500).json({
+        return res.status(404).json({
             success:false,
             message:err.message
         })
@@ -134,7 +134,7 @@ export const getAllQuestionsAdmin = async(req,res)=>{
         const questions = await  getAllQuestions(filter);
 
         if(!questions|| questions.length==0){
-            return res.status(500).json("no questions found")
+            return res.status(404).json("no questions found")
         }
 
 

@@ -19,7 +19,7 @@ export const postQuestion = async (req,res)=>{
         if(!questions){
             
             
-            return res.status(403).json({
+            return res.status(500).json({
             success:false,
             message:"insertion failed"
         })

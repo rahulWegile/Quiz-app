@@ -1,5 +1,5 @@
 import {changePass, clearOtp, getUserByOtp, insertOtp, newUser,userByEmail} from '../models/user.model.js'
-import bcrypt, { compare } from"bcrypt"
+import bcrypt from"bcrypt"
 import jwt  from "jsonwebtoken"
 import { uploadOnCloudinary } from '../utils/cloudinary.utils.js'
 
@@ -188,8 +188,7 @@ export const forgotPassword = async (req, res) => {
 
     
     
-    res.json({message: `Reset code sent to ${email} `,
-    data:user});
+    res.json({message: `Reset code sent to ${email} `});
   } catch (err) {
     res.status(500).json(err.message);
   }
