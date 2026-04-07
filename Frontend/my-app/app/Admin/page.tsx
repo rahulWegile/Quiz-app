@@ -383,7 +383,7 @@ export default async function AdminDashboard() {
           <div className="logo-area">
            
           </div>
-          <a href="/Admin" className="play-btn">🛡️ Admin Panel</a>
+          <a href="/Admin/schedule-quiz" className="play-btn">Schedule-Quiz</a>
         </div>
 
         {/* Welcome Card */}

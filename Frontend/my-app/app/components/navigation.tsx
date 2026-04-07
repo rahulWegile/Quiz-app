@@ -8,6 +8,8 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 
 export const Navigation = ({ children }: { children: React.ReactNode }) => {
   const pathName = usePathname();
+
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<{
     name?: string;
     email?: string;
@@ -46,15 +48,22 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
     if (!name) return "?";
     const parts = name.trim().split(" ").filter(Boolean);
     if (parts.length === 1) return parts[0][0]?.toUpperCase();
-    return (parts[0][0] || "").toUpperCase() + (parts[parts.length - 1][0] || "").toUpperCase();
+    return (
+      (parts[0][0] || "").toUpperCase() +
+      (parts[parts.length - 1][0] || "").toUpperCase()
+    );
   };
 
   const handleLogout = () => {
-    document.cookie = "session_token=; expires=Thu, 01 Jan 1970 UTC; path=/;";
+    document.cookie =
+      "session_token=; expires=Thu, 01 Jan 1970 UTC; path=/;";
+    setUser(null);
+    setMenuOpen(false);
     window.location.href = "/Auth/signIn";
   };
 
-  const hideSidebar = pathName.startsWith("/quiz/play") || pathName.startsWith("/Auth");
+  const hideSidebar =
+    pathName.startsWith("/quiz/play") || pathName.startsWith("/Auth");
   if (hideSidebar) return <>{children}</>;
 
   const navLinks = [
@@ -66,6 +75,25 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <style>{`
+        * { box-sizing: border-box; }
+
+        .mobile-topbar {
+          display: none;
+        }
+
+        .hamburger {
+          width: 36px; height: 36px;
+          background: #f3f4f6;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 16px;
+          display: flex; align-items: center; justify-content: center;
+          transition: background 0.15s;
+          flex-shrink: 0;
+        }
+        .hamburger:hover { background: #e5e7eb; }
+
         .nav-sidebar {
           width: 240px;
           height: 100vh;
@@ -79,7 +107,19 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           padding: 24px 16px;
           z-index: 50;
           box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+          transition: transform 0.28s cubic-bezier(.4,0,.2,1);
         }
+
+        .nav-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.3);
+          backdrop-filter: blur(2px);
+          z-index: 49;
+          animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .nav-logo {
           display: flex;
@@ -89,9 +129,7 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           padding: 8px 12px;
           border-radius: 10px;
           margin-bottom: 8px;
-          transition: background 0.2s;
         }
-        .nav-logo:hover { background: #f9f9f9; }
 
         .nav-logo-icon {
           width: 34px; height: 34px;
@@ -99,14 +137,12 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           border-radius: 9px;
           display: flex; align-items: center; justify-content: center;
           font-size: 16px;
-          flex-shrink: 0;
         }
 
         .nav-logo-text {
           font-size: 16px;
           font-weight: 700;
           color: #111;
-          letter-spacing: -0.3px;
         }
 
         .nav-divider {
@@ -119,8 +155,6 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           font-size: 10px;
           font-weight: 600;
           color: #bbb;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
           padding: 0 12px;
           margin-bottom: 6px;
         }
@@ -139,16 +173,10 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           border-radius: 9px;
           text-decoration: none;
           font-size: 13.5px;
-          font-weight: 500;
           color: #666;
-          transition: all 0.15s;
-          position: relative;
+          transition: background 0.15s, color 0.15s;
         }
-
-        .nav-link:hover {
-          background: #f5f5f5;
-          color: #111;
-        }
+        .nav-link:hover { background: #f9fafb; color: #111; }
 
         .nav-link.active {
           background: #f3f4f6;
@@ -156,24 +184,10 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           font-weight: 600;
         }
 
-        .nav-link.active::before {
-          content: '';
-          position: absolute;
-          left: 0; top: 50%;
-          transform: translateY(-50%);
-          width: 3px; height: 18px;
-          background: #6366f1;
-          border-radius: 0 3px 3px 0;
+        .nav-bottom {
+          border-top: 1px solid #f3f3f3;
+          padding-top: 16px;
         }
-
-        .nav-link-icon {
-          font-size: 16px;
-          width: 20px;
-          text-align: center;
-          flex-shrink: 0;
-        }
-
-        .nav-bottom { border-top: 1px solid #f3f3f3; padding-top: 16px; }
 
         .nav-user {
           display: flex;
@@ -184,20 +198,10 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           background: #fafafa;
           border: 1px solid #f0f0f0;
           margin-bottom: 8px;
-        }
-
-        .nav-avatar {
-          width: 34px; height: 34px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: #fff;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px;
-          font-weight: 700;
-          flex-shrink: 0;
           overflow: hidden;
         }
 
+        .nav-user-text { min-width: 0; flex: 1; }
         .nav-user-name {
           font-size: 13px;
           font-weight: 600;
@@ -206,151 +210,196 @@ export const Navigation = ({ children }: { children: React.ReactNode }) => {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-
         .nav-user-email {
           font-size: 11px;
-          color: #aaa;
+          color: #999;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        .nav-logout {
-          width: 100%;
-          padding: 9px;
-          background: transparent;
-          border: 1px solid #fee2e2;
-          border-radius: 8px;
-          cursor: pointer;
-          color: #ef4444;
-          font-size: 13px;
-          font-weight: 500;
-          transition: all 0.15s;
+        .nav-avatar {
+          width: 34px; height: 34px;
+          border-radius: 50%;
+          background: #6366f1;
+          color: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          font-size: 12px;
+          font-weight: 700;
+          overflow: hidden;
+          flex-shrink: 0;
         }
-        .nav-logout:hover { background: #fee2e2; }
+
+        .nav-logout {
+          width: 100%;
+          padding: 9px;
+          border-radius: 8px;
+          cursor: pointer;
+          background: #fff1f2;
+          color: #e11d48;
+          border: 1px solid #fecdd3;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: inherit;
+          transition: background 0.15s;
+        }
+        .nav-logout:hover { background: #ffe4e6; }
 
         .nav-signin {
           width: 100%;
-          padding: 11px;
+          padding: 10px;
+          border-radius: 8px;
+          cursor: pointer;
           background: #111;
           color: #fff;
           border: none;
-          border-radius: 9px;
-          font-size: 13.5px;
+          font-size: 13px;
           font-weight: 600;
-          cursor: pointer;
-          transition: all 0.15s;
-          letter-spacing: 0.01em;
+          font-family: inherit;
+          transition: background 0.15s;
         }
         .nav-signin:hover { background: #333; }
-
-        .nav-skeleton {
-          display: flex; align-items: center; gap: 10px;
-          padding: 10px 12px;
-        }
-        .sk-circle {
-          width: 34px; height: 34px; border-radius: 50%;
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-          flex-shrink: 0;
-        }
-        .sk-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-        .sk-line {
-          height: 10px; border-radius: 5px;
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-        }
-        .sk-line.short { width: 60%; }
-        @keyframes shimmer { to { background-position: -200% 0; } }
 
         .nav-content {
           margin-left: 240px;
           width: calc(100% - 240px);
           min-height: 100vh;
         }
+
+        /* ── MOBILE ── */
+        @media (max-width: 768px) {
+          .mobile-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: 54px;
+          }
+
+          .mobile-topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111;
+          }
+
+          .nav-sidebar {
+            transform: translateX(-100%);
+            width: 260px;
+            padding-top: 16px;
+            z-index: 200;
+          }
+
+          .nav-sidebar.open {
+            transform: translateX(0);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+          }
+
+          .nav-overlay {
+            display: block;
+            pointer-events: ${menuOpen ? "auto" : "none"};
+            opacity: ${menuOpen ? 1 : 0};
+            transition: opacity 0.28s ease;
+          }
+
+          .nav-content {
+            margin-left: 0;
+            width: 100%;
+            padding-top: 54px;
+          }
+        }
       `}</style>
 
-      <div style={{ display: "flex" }}>
-        <nav className="nav-sidebar">
+      {/* TOP BAR (MOBILE ONLY) */}
+      {/* TOP BAR (MOBILE ONLY) */}
+<div className="mobile-topbar">
+  <button
+    className="hamburger"
+    onClick={() => setMenuOpen(!menuOpen)}
+    aria-label="Toggle menu"
+  >
+    {menuOpen ? "✕" : "☰"}
+  </button>
+  <span className="mobile-topbar-title">BrainBolt</span>
+  <div style={{ width: 36 }} />
+</div>
 
-          {/* Logo */}
+      {/* OVERLAY — closes sidebar on backdrop tap */}
+      {menuOpen && (
+        <div
+          className="nav-overlay"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      <div style={{ display: "flex" }}>
+        <nav className={`nav-sidebar ${menuOpen ? "open" : ""}`}>
+
           <div>
-            <Link href="/" className="nav-logo">
+            <Link href="/" className="nav-logo" onClick={() => setMenuOpen(false)}>
               <div className="nav-logo-icon">⚡</div>
               <span className="nav-logo-text">BrainBolt</span>
             </Link>
 
             <div className="nav-divider" />
 
-            <div className="nav-section-label">Menu</div>
-
             <div className="nav-links">
               {navLinks.map(({ href, label, icon }) => (
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => setMenuOpen(false)}
                   className={`nav-link${pathName === href ? " active" : ""}`}
                 >
-                  <span className="nav-link-icon">{icon}</span>
+                  <span>{icon}</span>
                   {label}
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Bottom */}
           <div className="nav-bottom">
-            {userLoading ? (
-              <div className="nav-skeleton">
-                <div className="sk-circle" />
-                <div className="sk-lines">
-                  <div className="sk-line" />
-                  <div className="sk-line short" />
-                </div>
-              </div>
-            ) : user ? (
-              <>
-                <div className="nav-user">
-                  <div className="nav-avatar">
-                    {user.profile_url ? (
-                      <Image
-                        src={user.profile_url}
-                        alt={user.name ?? "Profile"}
-                        width={34}
-                        height={34}
-                        style={{ objectFit: "cover" }}
-                      />
-                    ) : (
-                      getInitials(user.name)
-                    )}
+            {!userLoading && (
+              user ? (
+                <>
+                  <div className="nav-user">
+                    <div className="nav-avatar">
+                      {user.profile_url ? (
+                        <Image
+                          src={user.profile_url}
+                          alt=""
+                          width={34}
+                          height={34}
+                        />
+                      ) : (
+                        getInitials(user.name)
+                      )}
+                    </div>
+                    <div className="nav-user-text">
+                      <div className="nav-user-name">{user.name}</div>
+                      <div className="nav-user-email">{user.email}</div>
+                    </div>
                   </div>
-                  <div style={{ overflow: "hidden" }}>
-                    <div className="nav-user-name">{user.name}</div>
-                    <div className="nav-user-email">{user.email}</div>
-                  </div>
-                </div>
-                <button className="nav-logout" onClick={handleLogout}>
-                  <span>↩</span> Sign out
-                </button>
-              </>
-            ) : (
-              <Link href="/Auth/signIn" style={{ display: "block" }}>
-                <button className="nav-signin">Sign In →</button>
-              </Link>
+                  <button className="nav-logout" onClick={handleLogout}>
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <Link href="/Auth/signIn" onClick={() => setMenuOpen(false)}>
+                  <button className="nav-signin">Sign In</button>
+                </Link>
+              )
             )}
           </div>
         </nav>
 
-        {/* Page content */}
-        <div className="nav-content">
-          {children}
-        </div>
+        <div className="nav-content">{children}</div>
       </div>
     </>
   );

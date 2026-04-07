@@ -1,108 +1,236 @@
-"use client"
-import { useEffect, useState } from "react"
-import { PieChart, Pie, Cell } from "recharts"
+"use client";
+import { useEffect, useState, useRef } from "react";
+import { PieChart, Pie, Cell } from "recharts";
 
-const API = process.env.NEXT_PUBLIC_API_URL
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 interface User {
-  id: string
-  name: string
-  email: string
-  profile_url: string | null
-  verification_code: string | null
-  gender: string
+  id: string;
+  name: string;
+  email: string;
+  profile_url: string | null;
+  verification_code: string | null;
+  gender: string;
 }
 
 interface Stats {
-  total_questions: number
-  total_attempts: number
-  total_users: number
+  total_questions: number;
+  total_attempts: number;
+  total_users: number;
 }
 
 interface AccuracyData {
-  correct: number
-  total: number
-  accuracy: number
+  correct: number;
+  total: number;
+  accuracy: number;
 }
 
 interface UpcomingSession {
-  id: string
-  topic_name: string
-  subject_name: string
-  scheduled_at: string
-  status: string
-  registered_count: number
+  id: string;
+  topic_name: string;
+  subject_name: string;
+  scheduled_at: string;
+  status: string;
+  registered_count: number;
 }
 
 const getInitials = (name: string) => {
-  const parts = name.trim().split(" ")
-  if (parts.length === 1) return parts[0][0].toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const formatCountdown = (scheduledAt: string, now: Date) => {
-  const diff = new Date(scheduledAt).getTime() - now.getTime()
-  if (diff <= 0) return "🚀 Starting now!"
-  const h = Math.floor(diff / 3600000)
-  const m = Math.floor((diff % 3600000) / 60000)
-  const s = Math.floor((diff % 60000) / 1000)
-  if (h > 0) return `⏰ ${h}h ${m}m`
-  if (m > 0) return `⏰ ${m}m ${s}s`
-  return `⚡ ${s}s`
-}
+  const diff = new Date(scheduledAt).getTime() - now.getTime();
+  if (diff <= 0) return "🚀 Starting now!";
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (h > 0) return `⏰ ${h}h ${m}m`;
+  if (m > 0) return `⏰ ${m}m ${s}s`;
+  return `⚡ ${s}s`;
+};
 
-const EMOJIS = ["🦄", "🐸", "🐼", "🦊", "🐙", "🐬", "🦁", "🐨", "🐯", "🦋"]
+const EMOJIS = ["🦄", "🐸", "🐼", "🦊", "🐙", "🐬", "🦁", "🐨", "🐯", "🦋"];
 
-function AccuracyDonut({ accuracy, correct, total }: { accuracy: number; correct: number; total: number }) {
-  const [animated, setAnimated] = useState(0)
+const GENDER_OPTIONS = [
+  { value: "male", icon: "♂", label: "Male", sub: "He / Him" },
+  { value: "female", icon: "♀", label: "Female", sub: "She / Her" },
+  { value: "other", icon: "✦", label: "Other", sub: "Any pronouns" },
+];
+
+function AccuracyDonut({
+  accuracy,
+  correct,
+  total,
+}: {
+  accuracy: number;
+  correct: number;
+  total: number;
+}) {
+  const [animated, setAnimated] = useState(0);
 
   useEffect(() => {
-    if (accuracy === 0) return
-    let frame = 0
-    const steps = 60
+    if (accuracy === 0) return;
+    let frame = 0;
+    const steps = 60;
     const timer = setInterval(() => {
-      frame++
-      setAnimated(Math.round((accuracy * frame) / steps))
-      if (frame >= steps) clearInterval(timer)
-    }, 16)
-    return () => clearInterval(timer)
-  }, [accuracy])
+      frame++;
+      setAnimated(Math.round((accuracy * frame) / steps));
+      if (frame >= steps) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [accuracy]);
 
   const data = [
     { name: "Correct", value: animated },
     { name: "Wrong", value: 100 - animated },
-  ]
+  ];
 
-  const color = animated >= 80 ? "#6ee7b7" : animated >= 50 ? "#6ec6f5" : "#ff8a70"
-  const label = animated >= 80 ? "🌟 Amazing!" : animated >= 60 ? "👍 Great!" : animated >= 40 ? "💪 Keep going!" : "🔥 Practice more!"
+  const color =
+    animated >= 80 ? "#6ee7b7" : animated >= 50 ? "#6ec6f5" : "#ff8a70";
+  const label =
+    animated >= 80
+      ? "🌟 Amazing!"
+      : animated >= 60
+        ? "👍 Great!"
+        : animated >= 40
+          ? "💪 Keep going!"
+          : "🔥 Practice more!";
 
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ position: "relative", display: "inline-block" }}>
         <PieChart width={180} height={180}>
-          <Pie data={data} cx={90} cy={90} innerRadius={58} outerRadius={82} startAngle={90} endAngle={-270} dataKey="value" strokeWidth={0}>
+          <Pie
+            data={data}
+            cx={90}
+            cy={90}
+            innerRadius={58}
+            outerRadius={82}
+            startAngle={90}
+            endAngle={-270}
+            dataKey="value"
+            strokeWidth={0}
+          >
             <Cell fill={color} />
             <Cell fill="#e2e8f0" />
           </Pie>
         </PieChart>
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", pointerEvents: "none" }}>
-          <div style={{ fontFamily: "'Fredoka One', cursive", fontSize: "30px", color, lineHeight: 1 }}>{animated}%</div>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>accuracy</div>
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            textAlign: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: "30px",
+              color,
+              lineHeight: 1,
+            }}
+          >
+            {animated}%
+          </div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            accuracy
+          </div>
         </div>
       </div>
-      <div style={{ marginTop: "4px", fontSize: "15px", fontWeight: 800, color: "#475569" }}>{label}</div>
-      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "14px" }}>
-        <div style={{ background: "#f0fdf4", border: "2px solid #6ee7b7", borderRadius: "12px", padding: "8px 16px", textAlign: "center" }}>
-          <div style={{ fontFamily: "'Fredoka One', cursive", fontSize: "20px", color: "#059669" }}>{correct}</div>
-          <div style={{ fontSize: "10px", fontWeight: 800, color: "#6ee7b7", textTransform: "uppercase", letterSpacing: "0.06em" }}>Correct ✅</div>
+      <div
+        style={{
+          marginTop: "4px",
+          fontSize: "15px",
+          fontWeight: 800,
+          color: "#475569",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "16px",
+          marginTop: "14px",
+        }}
+      >
+        <div
+          style={{
+            background: "#f0fdf4",
+            border: "2px solid #6ee7b7",
+            borderRadius: "12px",
+            padding: "8px 16px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: "20px",
+              color: "#059669",
+            }}
+          >
+            {correct}
+          </div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: 800,
+              color: "#6ee7b7",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            Correct ✅
+          </div>
         </div>
-        <div style={{ background: "#fff1f2", border: "2px solid #fca5a5", borderRadius: "12px", padding: "8px 16px", textAlign: "center" }}>
-          <div style={{ fontFamily: "'Fredoka One', cursive", fontSize: "20px", color: "#dc2626" }}>{total - correct}</div>
-          <div style={{ fontSize: "10px", fontWeight: 800, color: "#fca5a5", textTransform: "uppercase", letterSpacing: "0.06em" }}>Wrong ❌</div>
+        <div
+          style={{
+            background: "#fff1f2",
+            border: "2px solid #fca5a5",
+            borderRadius: "12px",
+            padding: "8px 16px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Fredoka One', cursive",
+              fontSize: "20px",
+              color: "#dc2626",
+            }}
+          >
+            {total - correct}
+          </div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: 800,
+              color: "#fca5a5",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            Wrong ❌
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 const css = `
@@ -150,17 +278,30 @@ const css = `
   .btn-upload-fun { background:var(--white); color:var(--ink-soft); border:2px solid #e2e8f0; padding:8px 16px; border-radius:var(--radius-pill); font-size:13px; font-weight:700; font-family:'Nunito',sans-serif; cursor:pointer; display:inline-block; transition:border-color 0.15s; }
   .btn-upload-fun:hover { border-color:var(--sky); color:var(--sky-dark); }
 
-  /* ── Info card ── */
-  .info-card-inner { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
-  @media (max-width:640px) { .info-card-inner { grid-template-columns:1fr; } }
+  /* ── Info card ── */.info-card-inner { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; align-items:start;overflow:visible; }
+  @media (max-width:640px) { .info-card-inner { grid-template-columns:1fr;  } }
 
   /* ── Grid ── */
   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
   @media (max-width:600px) { .grid-2 { grid-template-columns:1fr; } }
 
   /* ── Card base ── */
-  .fun-card { background:var(--white); border-radius:var(--radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.05); border:1.5px solid #e2e8f0; overflow:hidden; animation:cardIn 0.4s ease both; }
-  .fun-card:nth-child(2) { animation-delay:0.06s; }
+ .fun-card {
+  position: relative; /* ADD THIS */
+  z-index: 1;         /* ADD THIS */
+
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border: 1.5px solid #e2e8f0;
+  overflow: visible;
+  animation: cardIn 0.4s ease both;
+}
+
+.fun-card.elevated {
+  z-index: 999;
+}
+   .fun-card:nth-child(2) { animation-delay:0.06s; }
   .full-card { margin-bottom:16px; }
   .card-top { height:4px; }
   .card-top.sky   { background:linear-gradient(90deg,var(--sky),var(--mint)); }
@@ -168,7 +309,7 @@ const css = `
   .card-top.lilac { background:linear-gradient(90deg,var(--lilac),var(--pink)); }
   .card-top.mint  { background:linear-gradient(90deg,var(--mint),var(--lemon)); }
   .card-top.peach { background:linear-gradient(90deg,#fbbf24,#f97316,#ec4899); }
-  .card-pad { padding:20px 24px 22px; }
+  .card-pad { padding:20px 24px 22px; overflow:visible;}
   .section-title { font-family:'Fredoka One',cursive; font-size:17px; color:var(--ink); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
 
   /* ── Stats ── */
@@ -202,8 +343,6 @@ const css = `
   .fun-input { width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:var(--radius-md); font-size:14px; font-family:'Nunito',sans-serif; font-weight:600; color:var(--ink); background:#f8fafc; outline:none; transition:border-color 0.18s,box-shadow 0.18s; }
   .fun-input:focus { border-color:var(--sky); box-shadow:0 0 0 3px rgba(110,198,245,0.15); background:white; }
   .fun-input.err { border-color:var(--coral); }
-  .fun-select { width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:var(--radius-md); font-size:14px; font-family:'Nunito',sans-serif; font-weight:600; color:var(--ink); background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236ec6f5' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; outline:none; cursor:pointer; appearance:none; padding-right:38px; transition:border-color 0.18s; }
-  .fun-select:focus { border-color:var(--sky); box-shadow:0 0 0 3px rgba(110,198,245,0.15); }
   .verify-btn { background:none; border:none; color:var(--sky-dark); font-size:12px; font-weight:800; font-family:'Nunito',sans-serif; cursor:pointer; padding:0; margin-top:5px; display:inline-flex; align-items:center; gap:4px; text-decoration:underline; text-underline-offset:3px; }
   .pw-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .err-msg { color:#f96a4a; font-size:12px; font-weight:700; margin-top:8px; }
@@ -235,140 +374,440 @@ const css = `
   .btn-resend:disabled { color:var(--ink-light); cursor:default; }
   .skeleton-card { height:160px; border-radius:var(--radius-xl); background:linear-gradient(90deg,#e2e8f0 0%,#f1f5f9 50%,#e2e8f0 100%); background-size:200% 100%; animation:shimmer 1.5s infinite; margin-bottom:16px; }
   @keyframes shimmer { 0%{background-position:200% 0;}100%{background-position:-200% 0;} }
-`
+
+  /* ── Custom Gender Dropdown ── */
+  .gender-wrap { position:relative; }
+  .gender-trigger {
+    width:100%; padding:10px 40px 10px 14px; border:2px solid #e2e8f0;
+    border-radius:var(--radius-md); font-size:14px; font-family:'Nunito',sans-serif;
+    font-weight:600; color:var(--ink-soft); background:#f8fafc; outline:none;
+    cursor:pointer; display:flex; align-items:center; gap:8px;
+    transition:border-color 0.18s,box-shadow 0.18s,background 0.18s;
+    user-select:none; min-height:42px;
+  }
+  .gender-trigger.open { border-color:var(--sky); box-shadow:0 0 0 3px rgba(110,198,245,0.15); background:white; }
+  .gender-trigger.has-value { color:var(--ink); }
+  .gender-arrow {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    pointer-events:none; transition:transform 0.2s;
+  }
+  .gender-arrow.open { transform:translateY(-50%) rotate(180deg); }
+  .gender-panel {
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:white; border:2px solid var(--sky); border-radius:var(--radius-lg);
+    box-shadow:0 8px 24px rgba(110,198,245,0.18); z-index:9999; overflow:visible;
+    animation:gDropIn 0.18s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes gDropIn { from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);} }
+  .gender-opt {
+    display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;
+    font-size:14px; font-weight:700; color:var(--ink); transition:background 0.12s;
+    border-bottom:1px solid #f1f5f9;
+  }
+  .gender-opt:last-child { border-bottom:none; }
+  .gender-opt:hover { background:#f0f9ff; }
+  .gender-opt.active { background:#eff6ff; color:var(--sky-dark); }
+  .gender-opt-icon {
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center;
+    justify-content:center; font-size:15px; flex-shrink:0;
+  }
+  .gender-opt-icon.male   { background:linear-gradient(135deg,var(--sky),var(--sky-dark)); }
+  .gender-opt-icon.female { background:linear-gradient(135deg,var(--pink),#f472b6); }
+  .gender-opt-icon.other  { background:linear-gradient(135deg,var(--lilac),var(--lilac-dark)); }
+  .gender-trigger-icon {
+    width:24px; height:24px; border-radius:7px; display:flex; align-items:center;
+    justify-content:center; font-size:12px; flex-shrink:0;
+  }
+  .gender-trigger-icon.male   { background:linear-gradient(135deg,var(--sky),var(--sky-dark)); }
+  .gender-trigger-icon.female { background:linear-gradient(135deg,var(--pink),#f472b6); }
+  .gender-trigger-icon.other  { background:linear-gradient(135deg,var(--lilac),var(--lilac-dark)); }
+  .gender-opt-sub { font-size:11px; font-weight:600; color:var(--ink-light); margin-top:1px; }
+  .gender-check {
+    width:18px; height:18px; border-radius:50%; border:2px solid #cbd5e1; margin-left:auto;
+    display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0;
+  }
+  .gender-check.checked { background:var(--sky-dark); border-color:var(--sky-dark); }
+  .gender-check.checked::after { content:''; display:block; width:6px; height:6px; border-radius:50%; background:white; }
+
+
+
+/* ─── MOBILE IMPROVEMENTS ─── */
+
+/* Tighter nav on small screens */
+@media (max-width: 480px) {
+  .topnav { padding: 12px 16px; }
+  .logo { font-size: 22px; }
+  .nav-badge { font-size: 12px; padding: 5px 12px; }
+}
+
+/* Main container padding */
+@media (max-width: 480px) {
+  .main { padding: 16px 12px 80px; }
+}
+
+/* Hero card – stack avatar + info vertically on tiny screens */
+@media (max-width: 480px) {
+  .hero-card { padding: 18px 16px; }
+  .hero-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .avatar-circle { width: 72px; height: 72px; }
+  .avatar-initials-big { font-size: 28px; }
+  .hero-name { font-size: 21px; }
+  .hero-email { font-size: 12px; margin-bottom: 10px; }
+  .hero-actions { gap: 8px; }
+  .btn-primary, .btn-ghost, .btn-upload-fun { font-size: 12px; padding: 8px 14px; }
+}
+
+/* Info card – single column always on mobile */
+@media (max-width: 639px) {
+  .info-card-inner { grid-template-columns: 1fr; gap: 16px; }
+  .card-pad { padding: 16px 16px 18px; }
+  .section-title { font-size: 15px; }
+}
+
+/* Bottom 3-col grid → single column on mobile */
+@media (max-width: 640px) {
+  .grid-2,
+  div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px;
+  }
+}
+
+/* Stats bubbles – more compact */
+@media (max-width: 480px) {
+  .stat-bubble { padding: 10px 12px; }
+  .stat-icon { width: 34px; height: 34px; font-size: 17px; }
+  .stat-num { font-size: 20px; }
+  .stat-lbl { font-size: 10px; }
+}
+
+/* Accuracy donut – scale down */
+@media (max-width: 480px) {
+  .fun-card .card-pad > div[style*="text-align: center"] { transform: scale(0.92); transform-origin: top center; }
+}
+
+/* Session pills – wrapping badge */
+@media (max-width: 480px) {
+  .session-pill { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .session-badge { align-self: flex-start; }
+  .session-name { font-size: 12px; }
+  .session-sub { font-size: 10px; }
+}
+
+/* Password grid – always single col on small */
+@media (max-width: 479px) {
+  .pw-grid { grid-template-columns: 1fr; }
+}
+
+/* Save button – full width on mobile */
+@media (max-width: 479px) {
+  .save-bar { justify-content: stretch; }
+  .btn-save { width: 100%; text-align: center; }
+}
+
+/* Gender panel – ensure it doesn't clip */
+@media (max-width: 480px) {
+  .gender-panel { position: fixed; left: 12px; right: 12px; top: auto; width: auto; }
+}
+
+/* OTP modal – full-width on small */
+@media (max-width: 480px) {
+  .otp-box { padding: 28px 20px; }
+  .otp-emoji { font-size: 36px; }
+  .otp-box h2 { font-size: 20px; }
+  .otp-input { font-size: 22px; padding: 12px; letter-spacing: 0.4em; }
+}
+
+/* Toast – constrain width on mobile */
+@media (max-width: 480px) {
+  .toast { left: 16px; right: 16px; transform: none; text-align: center; white-space: normal; font-size: 12px; }
+}
+
+/* fun-card full card spacing */
+@media (max-width: 480px) {
+  .fun-card.full-card, .hero-card.full-card { margin-bottom: 12px; }
+}
+
+/* Logout row – wrap on tiny screens */
+@media (max-width: 400px) {
+  .logout-row { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .btn-logout { width: 100%; text-align: center; }
+}
+`;
 
 export default function Profile() {
-  const [user, setUser] = useState<User | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [gender, setGender] = useState("")
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [toast, setToast] = useState<{ msg: string } | null>(null)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [showOtp, setShowOtp] = useState(false)
-  const [otp, setOtp] = useState("")
-  const [otpLoading, setOtpLoading] = useState(false)
-  const [otpError, setOtpError] = useState("")
-  const [resendLoading, setResendLoading] = useState(false)
-  const [resendTimer, setResendTimer] = useState(0)
-  const [stats, setStats] = useState<Stats>({ total_questions: 0, total_attempts: 0, total_users: 0 })
-  const [accuracyData, setAccuracyData] = useState<AccuracyData>({ correct: 0, total: 0, accuracy: 0 })
-  const [upcoming, setUpcoming] = useState<UpcomingSession[]>([])
-  const [now, setNow] = useState(new Date())
-  const [avatarEmoji] = useState(() => EMOJIS[Math.floor(Math.random() * EMOJIS.length)])
+  const [user, setUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [gender, setGender] = useState("");
+  const [genderOpen, setGenderOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [toast, setToast] = useState<{ msg: string } | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [stats, setStats] = useState<Stats>({
+    total_questions: 0,
+    total_attempts: 0,
+    total_users: 0,
+  });
+  const [accuracyData, setAccuracyData] = useState<AccuracyData>({
+    correct: 0,
+    total: 0,
+    accuracy: 0,
+  });
+  const [upcoming, setUpcoming] = useState<UpcomingSession[]>([]);
+  const [now, setNow] = useState(new Date());
+  const [avatarEmoji] = useState(
+    () => EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+  );
+
+  const genderRef = useRef<HTMLDivElement>(null);
 
   const getToken = () => {
-    const cookie = document.cookie.split(";").find((r) => r.trim().startsWith("session_token="))
-    if (!cookie) return undefined
-    return cookie.split("=").slice(1).join("=").trim()
-  }
+    const cookie = document.cookie
+      .split(";")
+      .find((r) => r.trim().startsWith("session_token="));
+    if (!cookie) return undefined;
+    return cookie.split("=").slice(1).join("=").trim();
+  };
 
-  const showToast = (msg: string) => { setToast({ msg }); setTimeout(() => setToast(null), 3000) }
+  const showToast = (msg: string) => {
+    setToast({ msg });
+    setTimeout(() => setToast(null), 3000);
+  };
   const startTimer = () => {
-    setResendTimer(60)
+    setResendTimer(60);
     const interval = setInterval(() => {
-      setResendTimer((prev) => { if (prev <= 1) { clearInterval(interval); return 0 } return prev - 1 })
-    }, 1000)
-  }
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Close gender dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (genderRef.current && !genderRef.current.contains(e.target as Node)) {
+        setGenderOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = getToken(); if (!token) return
-      const res = await fetch(`${API}/api/user`, { headers: { Authorization: `Bearer ${token}` } })
-      const data = await res.json()
-      const u = data.data
-      setUser(u || null)
-      if (u) { setName(u.name); setEmail(u.email); setGender(u.gender || "") }
-    }
-    fetchUser()
-  }, [])
+      const token = getToken();
+      if (!token) return;
+      const res = await fetch(`${API}/api/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const u = data.data;
+      setUser(u || null);
+      if (u) {
+        setName(u.name);
+        setEmail(u.email);
+        setGender(u.gender || "");
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
-    const clock = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(clock)
-  }, [])
+    const clock = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(clock);
+  }, []);
 
   useEffect(() => {
     const fetchAll = async () => {
-      const token = getToken()
-      const headers = { Authorization: `Bearer ${token}` } as HeadersInit
-      try { const r = await fetch(`${API}/api/stats`, { headers }); const d = await r.json(); if (d.success) setStats(d.data) } catch (e) { console.error(e) }
-      try { const r = await fetch(`${API}/api/accuracy`, { headers }); const d = await r.json(); if (d.success) setAccuracyData(d.data) } catch (e) { console.error(e) }
-      try { const r = await fetch(`${API}/api/quiz/upcomingQuizzes`, { headers }); const d = await r.json(); if (d.data) setUpcoming(d.data.slice(0, 3)) } catch (e) { console.error(e) }
-    }
-    fetchAll()
-  }, [])
+      const token = getToken();
+      const headers = { Authorization: `Bearer ${token}` } as HeadersInit;
+      try {
+        const r = await fetch(`${API}/api/stats`, { headers });
+        const d = await r.json();
+        if (d.success) setStats(d.data);
+      } catch (e) {
+        console.error(e);
+      }
+      try {
+        const r = await fetch(`${API}/api/accuracy`, { headers });
+        const d = await r.json();
+        if (d.success) setAccuracyData(d.data);
+      } catch (e) {
+        console.error(e);
+      }
+      try {
+        const r = await fetch(`${API}/api/quiz/upcomingQuizzes`, { headers });
+        const d = await r.json();
+        if (d.data) setUpcoming(d.data.slice(0, 3));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchAll();
+  }, []);
 
   const handleProfilePic = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return
-    const token = getToken(); if (!token) return
-    setUploading(true)
-    const formData = new FormData(); formData.append("profile_picture", file)
-    const res = await fetch(`${API}/api/updateProfilePic`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: formData })
-    const data = await res.json()
-    if (data.success) { setUser((prev) => prev ? { ...prev, profile_url: data.profile_url } : prev); showToast("🎉 Photo updated!") }
-    else showToast("😢 Photo update failed")
-    setUploading(false)
-  }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const token = getToken();
+    if (!token) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+    const res = await fetch(`${API}/api/updateProfilePic`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.success) {
+      setUser((prev) =>
+        prev ? { ...prev, profile_url: data.profile_url } : prev,
+      );
+      showToast("🎉 Photo updated!");
+    } else showToast("😢 Photo update failed");
+    setUploading(false);
+  };
 
   const handleSave = async () => {
-    const token = getToken(); if (!token) return
-    if (newPassword && currentPassword === newPassword) { setPasswordError("New password must be different!"); return }
-    if (newPassword && newPassword !== confirmPassword) { setPasswordError("Passwords don't match!"); return }
-    if (newPassword && newPassword.length < 6) { setPasswordError("Min 6 characters needed!"); return }
-    if (newPassword && !currentPassword) { setPasswordError("Enter your current password first!"); return }
-    setPasswordError(null); setSaving(true)
+    const token = getToken();
+    if (!token) return;
+    if (newPassword && currentPassword === newPassword) {
+      setPasswordError("New password must be different!");
+      return;
+    }
+    if (newPassword && newPassword !== confirmPassword) {
+      setPasswordError("Passwords don't match!");
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      setPasswordError("Min 6 characters needed!");
+      return;
+    }
+    if (newPassword && !currentPassword) {
+      setPasswordError("Enter your current password first!");
+      return;
+    }
+    setPasswordError(null);
+    setSaving(true);
     const res = await fetch(`${API}/api/update`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, gender, currentPassword: currentPassword || undefined, password: newPassword || undefined, profile_url: user?.profile_url }),
-    })
-    const data = await res.json()
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        gender,
+        currentPassword: currentPassword || undefined,
+        password: newPassword || undefined,
+        profile_url: user?.profile_url,
+      }),
+    });
+    const data = await res.json();
     if (data.success) {
-      setUser(data.data.user); setIsEditing(false); setCurrentPassword(""); setNewPassword(""); setConfirmPassword("")
-      showToast("🎊 Profile updated!")
+      setUser(data.data.user);
+      setIsEditing(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      showToast("🎊 Profile updated!");
     } else if (data.emailVerificationRequired) {
-      setUser((prev) => prev ? { ...prev, email: data.email, verification_code: "pending" } : prev)
-      setEmail(data.email); setIsEditing(false); setCurrentPassword(""); setNewPassword("")
-      showToast("📧 Check your new email!")
+      setUser((prev) =>
+        prev
+          ? { ...prev, email: data.email, verification_code: "pending" }
+          : prev,
+      );
+      setEmail(data.email);
+      setIsEditing(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      showToast("📧 Check your new email!");
     } else {
-      setPasswordError(data.message === "Incorrect current password" ? "Wrong current password!" : null)
-      if (data.message !== "Incorrect current password") showToast(data.message || "Update failed")
+      setPasswordError(
+        data.message === "Incorrect current password"
+          ? "Wrong current password!"
+          : null,
+      );
+      if (data.message !== "Incorrect current password")
+        showToast(data.message || "Update failed");
     }
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const handleCancel = () => {
-    if (user) { setName(user.name); setEmail(user.email); setGender(user.gender || "") }
-    setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setPasswordError(null); setIsEditing(false)
-  }
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setGender(user.gender || "");
+    }
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+    setIsEditing(false);
+    setGenderOpen(false);
+  };
 
   const handleSendCode = async () => {
-    if (!user) return; setResendLoading(true)
-    const res = await fetch(`${API}/api/resendCode`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: user.email }) })
-    const data = await res.json()
-    if (data.success) { setShowOtp(true); startTimer() }
-    setResendLoading(false)
-  }
+    if (!user) return;
+    setResendLoading(true);
+    const res = await fetch(`${API}/api/resendCode`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setShowOtp(true);
+      startTimer();
+    }
+    setResendLoading(false);
+  };
 
   const handleVerifyOtp = async () => {
-    if (!otp || !user) return; setOtpLoading(true)
-    const res = await fetch(`${API}/api/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verification_code: otp, email: user.email }) })
-    const data = await res.json()
-    if (data.success) { setUser((prev) => prev ? { ...prev, verification_code: null } : prev); setShowOtp(false); setOtp(""); showToast("✅ Email verified!") }
-    else setOtpError(data.message || "Invalid code!")
-    setOtpLoading(false)
-  }
+    if (!otp || !user) return;
+    setOtpLoading(true);
+    const res = await fetch(`${API}/api/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ verification_code: otp, email: user.email }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setUser((prev) => (prev ? { ...prev, verification_code: null } : prev));
+      setShowOtp(false);
+      setOtp("");
+      showToast("✅ Email verified!");
+    } else setOtpError(data.message || "Invalid code!");
+    setOtpLoading(false);
+  };
 
   const handleLogout = () => {
-    document.cookie = "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
-    window.location.href = "/login"
-  }
+    document.cookie =
+      "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.href = "/login";
+  };
+
+  const selectedGenderOption = GENDER_OPTIONS.find((o) => o.value === gender);
 
   return (
     <div className="page">
@@ -385,8 +824,14 @@ export default function Profile() {
         {!user ? (
           <>
             <div className="skeleton-card" />
-            <div className="skeleton-card" style={{ height: "120px", opacity: 0.7 }} />
-            <div className="skeleton-card" style={{ height: "180px", opacity: 0.5 }} />
+            <div
+              className="skeleton-card"
+              style={{ height: "120px", opacity: 0.7 }}
+            />
+            <div
+              className="skeleton-card"
+              style={{ height: "180px", opacity: 0.5 }}
+            />
           </>
         ) : (
           <>
@@ -395,61 +840,191 @@ export default function Profile() {
               <div className="hero-inner">
                 <div className="avatar-wrap">
                   <div className="avatar-circle">
-                    {user.profile_url
-                      ? <img src={user.profile_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="avatar" />
-                      : <span className="avatar-initials-big">{getInitials(user.name)}</span>}
+                    {user.profile_url ? (
+                      <img
+                        src={user.profile_url}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        alt="avatar"
+                      />
+                    ) : (
+                      <span className="avatar-initials-big">
+                        {getInitials(user.name)}
+                      </span>
+                    )}
                   </div>
                   <div className="avatar-emoji">{avatarEmoji}</div>
                 </div>
                 <div className="hero-info">
-                  <div className="hero-name">Hey, {user.name.split(" ")[0]}! 👋</div>
+                  <div className="hero-name">
+                    Hey, {user.name.split(" ")[0]}! 👋
+                  </div>
                   <div className="hero-email">{user.email}</div>
                   <div className="hero-actions">
                     <label className="btn-upload-fun">
                       {uploading ? "⏳ Uploading…" : "📷 Update photo"}
-                      <input type="file" hidden onChange={handleProfilePic} accept="image/*" />
+                      <input
+                        type="file"
+                        hidden
+                        onChange={handleProfilePic}
+                        accept="image/*"
+                      />
                     </label>
-                    {!isEditing
-                      ? <button className="btn-primary" onClick={() => setIsEditing(true)}>✏️ Edit Profile</button>
-                      : <button className="btn-ghost" onClick={handleCancel}>Discard</button>}
+                    {!isEditing ? (
+                      <button
+                        className="btn-primary"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        ✏️ Edit Profile
+                      </button>
+                    ) : (
+                      <button className="btn-ghost" onClick={handleCancel}>
+                        Discard
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ── My Info ── */}
-            <div className="fun-card full-card">
+          <div className={`fun-card full-card ${genderOpen ? "elevated" : ""}`}>
               <div className="card-top lilac" />
               <div className="card-pad">
                 <div className="section-title">🙋 My Info</div>
                 <div className="info-card-inner">
                   <div className="field">
                     <span className="field-lbl">Display Name</span>
-                    {isEditing
-                      ? <input className="fun-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your cool name" />
-                      : <div className="field-val">{user.name}</div>}
+                    {isEditing ? (
+                      <input
+                        className="fun-input"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your cool name"
+                      />
+                    ) : (
+                      <div className="field-val">{user.name}</div>
+                    )}
                   </div>
                   <div className="field">
                     <span className="field-lbl">Email</span>
-                    {isEditing
-                      ? <input className="fun-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
-                      : <div className="field-val normal-case">{user.email}</div>}
+                    {isEditing ? (
+                      <input
+                        className="fun-input"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your@email.com"
+                      />
+                    ) : (
+                      <div className="field-val normal-case">{user.email}</div>
+                    )}
                     {user.verification_code && !showOtp && (
                       <button className="verify-btn" onClick={handleSendCode}>
                         {resendLoading ? "Sending…" : "📬 Verify email →"}
                       </button>
                     )}
                   </div>
+
+                  {/* ── Gender Field ── */}
                   <div className="field">
                     <span className="field-lbl">Gender</span>
                     {isEditing ? (
-                      <select className="fun-select" value={gender} onChange={(e) => setGender(e.target.value)}>
-                        <option value="">Pick one…</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </select>
-                    ) : <div className="field-val" style={{ textTransform: "capitalize" }}>{user.gender || "Not set"}</div>}
+                      <div className="gender-wrap" ref={genderRef}>
+                        {/* Trigger */}
+                        <div
+                          className={`gender-trigger${genderOpen ? " open" : ""}${gender ? " has-value" : ""}`}
+                          onClick={() => setGenderOpen((v) => !v)}
+                        >
+                          {selectedGenderOption && (
+                            <div
+                              className={`gender-trigger-icon ${selectedGenderOption.value}`}
+                            >
+                              {selectedGenderOption.icon}
+                            </div>
+                          )}
+                          <span>
+                            {selectedGenderOption?.label ?? "Pick one…"}
+                          </span>
+                        </div>
+
+                        {/* Arrow */}
+                        <div
+                          className={`gender-arrow${genderOpen ? " open" : ""}`}
+                        >
+                          <svg
+                            width="12"
+                            height="8"
+                            viewBox="0 0 12 8"
+                            fill="none"
+                          >
+                            <path
+                              d="M1 1l5 5 5-5"
+                              stroke="#6ec6f5"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Panel */}
+                        {genderOpen && (
+                          <div className="gender-panel">
+                            {GENDER_OPTIONS.map((opt) => (
+                              <div
+                                key={opt.value}
+                                className={`gender-opt${gender === opt.value ? " active" : ""}`}
+                                onClick={() => {
+                                  setGender(opt.value);
+                                  setGenderOpen(false);
+                                }}
+                              >
+                                <div className={`gender-opt-icon ${opt.value}`}>
+                                  {opt.icon}
+                                </div>
+                                <div>
+                                  <div>{opt.label}</div>
+                                  <div className="gender-opt-sub">
+                                    {opt.sub}
+                                  </div>
+                                </div>
+                                <div
+                                  className={`gender-check${gender === opt.value ? " checked" : ""}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="field-val"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        {selectedGenderOption && (
+                          <div
+                            className={`gender-trigger-icon ${selectedGenderOption.value}`}
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 7,
+                              fontSize: 12,
+                            }}
+                          >
+                            {selectedGenderOption.icon}
+                          </div>
+                        )}
+                        <span style={{ textTransform: "capitalize" }}>
+                          {user.gender || "Not set"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -463,33 +1038,69 @@ export default function Profile() {
                   <div className="section-title">🔐 Change Password</div>
                   <div style={{ marginBottom: "16px" }}>
                     <span className="field-lbl">Current Password</span>
-                    <input type="password" className={`fun-input${passwordError ? " err" : ""}`} placeholder="Current password" value={currentPassword} onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(null) }} />
+                    <input
+                      type="password"
+                      className={`fun-input${passwordError ? " err" : ""}`}
+                      placeholder="Current password"
+                      value={currentPassword}
+                      onChange={(e) => {
+                        setCurrentPassword(e.target.value);
+                        setPasswordError(null);
+                      }}
+                    />
                   </div>
                   <div className="pw-grid">
                     <div>
                       <span className="field-lbl">New Password</span>
-                      <input type="password" className="fun-input" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                      <input
+                        type="password"
+                        className="fun-input"
+                        placeholder="New password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
                     </div>
                     <div>
                       <span className="field-lbl">Confirm</span>
-                      <input type="password" className="fun-input" placeholder="Repeat it!" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                      <input
+                        type="password"
+                        className="fun-input"
+                        placeholder="Repeat it!"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
                     </div>
                   </div>
-                  {passwordError && <div className="err-msg">⚠️ {passwordError}</div>}
+                  {passwordError && (
+                    <div className="err-msg">⚠️ {passwordError}</div>
+                  )}
                 </div>
               </div>
             )}
 
             {isEditing && (
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
-                <button className="btn-save" onClick={handleSave} disabled={saving}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginBottom: "16px",
+                }}
+              >
+                <button
+                  className="btn-save"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
                   {saving ? "⏳ Saving…" : "🚀 Save Changes!"}
                 </button>
               </div>
             )}
 
             {/* ── Stats + Accuracy + Upcoming ── */}
-            <div className="grid-2" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+            <div
+              className="grid-2"
+              style={{ gridTemplateColumns: "1fr 1fr 1fr" }}
+            >
               <div className="fun-card">
                 <div className="card-top sky" />
                 <div className="card-pad">
@@ -498,14 +1109,18 @@ export default function Profile() {
                     <div className="stat-bubble blue">
                       <div className="stat-icon blue">❓</div>
                       <div>
-                        <div className="stat-num">{stats.total_questions.toLocaleString()}</div>
+                        <div className="stat-num">
+                          {stats.total_questions.toLocaleString()}
+                        </div>
                         <div className="stat-lbl">Questions</div>
                       </div>
                     </div>
                     <div className="stat-bubble green">
                       <div className="stat-icon green">⚡</div>
                       <div>
-                        <div className="stat-num">{stats.total_attempts.toLocaleString()}</div>
+                        <div className="stat-num">
+                          {stats.total_attempts.toLocaleString()}
+                        </div>
                         <div className="stat-lbl">Attempts</div>
                       </div>
                     </div>
@@ -517,7 +1132,11 @@ export default function Profile() {
                 <div className="card-top peach" />
                 <div className="card-pad">
                   <div className="section-title">🎯 Accuracy</div>
-                  <AccuracyDonut accuracy={accuracyData.accuracy} correct={accuracyData.correct} total={accuracyData.total} />
+                  <AccuracyDonut
+                    accuracy={accuracyData.accuracy}
+                    correct={accuracyData.correct}
+                    total={accuracyData.total}
+                  />
                 </div>
               </div>
 
@@ -525,20 +1144,30 @@ export default function Profile() {
                 <div className="card-top coral" />
                 <div className="card-pad">
                   <div className="section-title">📅 Coming Up!</div>
-                  {upcoming.length > 0 ? upcoming.map((s) => (
-                    <div className="session-pill" key={s.id}>
-                      <div>
-                        <div className="session-name">{s.topic_name}</div>
-                        <div className="session-sub">{s.subject_name} · {s.registered_count} joined</div>
+                  {upcoming.length > 0 ? (
+                    upcoming.map((s) => (
+                      <div className="session-pill" key={s.id}>
+                        <div>
+                          <div className="session-name">{s.topic_name}</div>
+                          <div className="session-sub">
+                            {s.subject_name} · {s.registered_count} joined
+                          </div>
+                        </div>
+                        <div className="session-badge">
+                          {formatCountdown(s.scheduled_at, now)}
+                        </div>
                       </div>
-                      <div className="session-badge">{formatCountdown(s.scheduled_at, now)}</div>
+                    ))
+                  ) : (
+                    <div className="no-sessions">
+                      😴 No sessions yet!
+                      <br />
+                      Check back soon!
                     </div>
-                  )) : <div className="no-sessions">😴 No sessions yet!<br />Check back soon!</div>}
+                  )}
                 </div>
               </div>
             </div>
-
-           
           </>
         )}
       </div>
@@ -549,18 +1178,36 @@ export default function Profile() {
           <div className="otp-box">
             <span className="otp-emoji">📬</span>
             <h2>Check Your Email!</h2>
-            <p>We sent a secret code to<br /><strong>{user.email}</strong></p>
-            <input className="otp-input" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="· · · · · ·" maxLength={6} />
-            {otpError && <div className="err-msg" style={{ marginBottom: "12px" }}>⚠️ {otpError}</div>}
+            <p>
+              We sent a secret code to
+              <br />
+              <strong>{user.email}</strong>
+            </p>
+            <input
+              className="otp-input"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="· · · · · ·"
+              maxLength={6}
+            />
+            {otpError && (
+              <div className="err-msg" style={{ marginBottom: "12px" }}>
+                ⚠️ {otpError}
+              </div>
+            )}
             <button className="btn-otp-confirm" onClick={handleVerifyOtp}>
               {otpLoading ? "⏳ Checking…" : "✅ Confirm Code!"}
             </button>
-            <button className="btn-resend" onClick={handleSendCode} disabled={resendTimer > 0}>
+            <button
+              className="btn-resend"
+              onClick={handleSendCode}
+              disabled={resendTimer > 0}
+            >
               {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend code"}
             </button>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

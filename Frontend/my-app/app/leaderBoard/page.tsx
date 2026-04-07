@@ -1,82 +1,157 @@
-"use client"
-import { useEffect, useState, useMemo } from "react"
+"use client";
+import { useEffect, useState, useMemo, useRef } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 interface Entry {
-    name: string; profile_url: string | null; score: number
-    time_taken: number; topic_name: string; subject_name: string; submitted_at: string
+  name: string;
+  profile_url: string | null;
+  score: number;
+  time_taken: number;
+  topic_name: string;
+  subject_name: string;
+  submitted_at: string;
 }
 
 const AVATAR_COLORS = [
-    { bg: "#eef2ff", color: "#6366f1", border: "#c7d2fe" },
-    { bg: "#fdf2f8", color: "#ec4899", border: "#fbcfe8" },
-    { bg: "#f0fdf4", color: "#14b8a6", border: "#99f6e4" },
-    { bg: "#fff7ed", color: "#f97316", border: "#fed7aa" },
-    { bg: "#fffbeb", color: "#f59e0b", border: "#fde68a" },
-    { bg: "#f5f3ff", color: "#8b5cf6", border: "#ddd6fe" },
-]
+  { bg: "#eef2ff", color: "#6366f1", border: "#c7d2fe" },
+  { bg: "#fdf2f8", color: "#ec4899", border: "#fbcfe8" },
+  { bg: "#f0fdf4", color: "#14b8a6", border: "#99f6e4" },
+  { bg: "#fff7ed", color: "#f97316", border: "#fed7aa" },
+  { bg: "#fffbeb", color: "#f59e0b", border: "#fde68a" },
+  { bg: "#f5f3ff", color: "#8b5cf6", border: "#ddd6fe" },
+];
 
 const SUBJECT_ICONS: Record<string, string> = {
-    science: "⚗️", mathematics: "📐", history: "🏛️", geography: "🌍",
-    technology: "💻", sports: "⚽", entertainment: "🎬", literature: "📚",
-    maths: "📐", ai: "🤖", default: "🧠",
-}
-const getIcon = (name: string) => SUBJECT_ICONS[name.toLowerCase()] || SUBJECT_ICONS.default
+  science: "⚗️",
+  mathematics: "📐",
+  history: "🏛️",
+  geography: "🌍",
+  technology: "💻",
+  sports: "⚽",
+  entertainment: "🎬",
+  literature: "📚",
+  maths: "📐",
+  ai: "🤖",
+  default: "🧠",
+};
+const getIcon = (name: string) =>
+  SUBJECT_ICONS[name.toLowerCase()] || SUBJECT_ICONS.default;
 
 function getInitials(name: string) {
-    const parts = name.trim().split(" ").filter(Boolean)
-    if (parts.length === 1) return parts[0][0]?.toUpperCase()
-    return (parts[0][0] || "").toUpperCase() + (parts[parts.length - 1][0] || "").toUpperCase()
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase();
+  return (
+    (parts[0][0] || "").toUpperCase() +
+    (parts[parts.length - 1][0] || "").toUpperCase()
+  );
 }
 
 export default function Leaderboard() {
-    const [entries, setEntries] = useState<Entry[]>([])
-    const [selectedSubject, setSelectedSubject] = useState("All")
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("All");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        fetch(`${API}/api/leaderboard`)
-            .then(r => r.json())
-            .then(d => { setEntries(d.data || []); setLoading(false) })
-            .catch(() => { setError("Failed to load leaderboard"); setLoading(false) })
-    }, [])
+  useEffect(() => {
+    fetch(`${API}/api/leaderboard`)
+      .then((r) => r.json())
+      .then((d) => {
+        setEntries(d.data || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load leaderboard");
+        setLoading(false);
+      });
+  }, []);
 
-    const subjects = useMemo(() => {
-        const map = new Map<string, number>()
-        entries.forEach(e => map.set(e.subject_name, (map.get(e.subject_name) || 0) + 1))
-        return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
-    }, [entries])
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
-    const filtered = useMemo(() =>
-        selectedSubject === "All" ? entries : entries.filter(e => e.subject_name === selectedSubject),
-        [entries, selectedSubject]
-    )
+  const subjects = useMemo(() => {
+    const map = new Map<string, number>();
+    entries.forEach((e) =>
+      map.set(e.subject_name, (map.get(e.subject_name) || 0) + 1),
+    );
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
+  }, [entries]);
 
-    const top3 = filtered.slice(0, 3)
+  const filtered = useMemo(
+    () =>
+      selectedSubject === "All"
+        ? entries
+        : entries.filter((e) => e.subject_name === selectedSubject),
+    [entries, selectedSubject],
+  );
 
-    if (loading) return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", background: "#eef2ff" }}>
-            <div className="lb-spinner" />
-        </div>
-    )
-    if (error) return (
-        <div style={{ textAlign: "center", padding: 60, background: "#eef2ff", minHeight: "60vh" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-            <p style={{ fontFamily: "'Fraunces',serif", fontSize: 20, fontWeight: 800, color: "#1e1b4b" }}>{error}</p>
-        </div>
-    )
+  const top3 = filtered.slice(0, 3);
 
+  if (loading)
     return (
-        <>
-            <style>{`
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "60vh",
+          background: "#eef2ff",
+        }}
+      >
+        <div className="lb-spinner" />
+      </div>
+    );
+  if (error)
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          padding: 60,
+          background: "#eef2ff",
+          minHeight: "60vh",
+        }}
+      >
+        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+        <p
+          style={{
+            fontFamily: "'Fraunces',serif",
+            fontSize: 20,
+            fontWeight: 800,
+            color: "#1e1b4b",
+          }}
+        >
+          {error}
+        </p>
+      </div>
+    );
+
+  const selectedCount =
+    selectedSubject === "All"
+      ? entries.length
+      : (subjects.find((s) => s.name === selectedSubject)?.count ?? 0);
+
+  return (
+    <>
+      <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&display=swap');
                 .lb{font-family:'Outfit',sans-serif;background:#eef2ff;min-height:100vh;color:#1e1b4b;}
                 .lb *{box-sizing:border-box;margin:0;padding:0;}
 
                 /* HEADER */
-                .lb-header{background:linear-gradient(160deg,#e0e7ff 0%,#f5f3ff 100%);padding:48px 60px 40px;border-bottom:1px solid #c7d2fe;position:relative;overflow:hidden;}
+                .lb-header{background:linear-gradient(160deg,#e0e7ff 0%,#f5f3ff 100%);padding:48px 60px 40px;border-bottom:1px solid #c7d2fe;position:relative;overflow:visible;}
                 .lb-header::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(99,102,241,0.06) 1.5px,transparent 1.5px);background-size:24px 24px;pointer-events:none;}
                 .lb-header-inner{max-width:960px;margin:0 auto;position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;}
 
@@ -87,15 +162,29 @@ export default function Leaderboard() {
                 .lb-title em{font-style:italic;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
                 .lb-sub{font-size:14px;color:#6b7280;margin-top:6px;}
 
-                /* DROPDOWN */
-                .lb-dropdown-wrap{display:flex;flex-direction:column;gap:6px;align-self:flex-end;}
+                /* CUSTOM DROPDOWN */
+                .lb-dropdown-wrap{display:flex;flex-direction:column;gap:6px;align-self:flex-end;position:relative;}
                 .lb-dropdown-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;}
-                .lb-dropdown-inner{position:relative;display:inline-flex;align-items:center;}
-                .lb-dropdown-icon{position:absolute;left:12px;font-size:15px;pointer-events:none;z-index:1;line-height:1;}
-                .lb-select{appearance:none;-webkit-appearance:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#1e1b4b;background:#fff;border:1.5px solid #e0e7ff;border-radius:12px;padding:10px 40px 10px 36px;cursor:pointer;transition:all .18s;outline:none;min-width:220px;box-shadow:0 2px 8px rgba(99,102,241,.06);}
-                .lb-select:hover{border-color:#a5b4fc;}
-                .lb-select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
-                .lb-chevron{position:absolute;right:12px;pointer-events:none;color:#9ca3af;}
+
+                .lb-select-btn{display:flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#1e1b4b;background:#fff;border:1.5px solid #e0e7ff;border-radius:12px;padding:10px 14px;cursor:pointer;transition:border-color .18s, box-shadow .18s;width:100%;user-select:none;outline:none;min-width:240px;}
+                .lb-select-btn:hover{border-color:#a5b4fc;}
+                .lb-select-btn.open{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+                .lb-select-icon{font-size:15px;line-height:1;flex-shrink:0;}
+                .lb-select-text{flex:1;text-align:left;}
+                .lb-chevron-icon{margin-left:auto;color:#9ca3af;transition:transform .2s;flex-shrink:0;}
+                .lb-select-btn.open .lb-chevron-icon{transform:rotate(180deg);}
+
+              .lb-dropdown-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid #e0e7ff;border-radius:14px;box-shadow:0 8px 28px rgba(99,102,241,.14);z-index:200;overflow:hidden;animation:lbdd .15s ease;    max-height: 200px;overflow-y: auto; overflow-x: hidden;}
+                @keyframes lbdd{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+
+                .lb-option{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .13s;font-size:14px;font-weight:500;color:#1e1b4b;}
+                .lb-option:hover{background:#f5f3ff;}
+                .lb-option.selected{background:#eef2ff;font-weight:700;}
+                .lb-option-icon{font-size:14px;line-height:1;flex-shrink:0;}
+                .lb-option-label{flex:1;}
+                .lb-option-count{font-size:11px;font-weight:600;color:#9ca3af;background:#f3f4f6;padding:2px 7px;border-radius:100px;}
+                .lb-option.selected .lb-option-count{background:#e0e7ff;color:#6366f1;}
+                .lb-divider{height:1px;background:#f3f4f6;margin:4px 0;}
 
                 /* BODY */
                 .lb-body{max-width:960px;margin:0 auto;padding:40px 60px 80px;}
@@ -119,8 +208,8 @@ export default function Leaderboard() {
                 .lb-eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6366f1;margin-bottom:6px;}
                 .lb-sec-title{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:#1e1b4b;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
                 .lb-table{background:#fff;border-radius:20px;border:1.5px solid #e0e7ff;overflow:hidden;box-shadow:0 2px 12px rgba(99,102,241,.06);}
-                .lb-thead{display:grid;grid-template-columns:60px 1fr 130px 120px 80px 90px;padding:12px 20px;border-bottom:1px solid #f3f4f6;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;background:#fafbff;}
-                .lb-row{display:grid;grid-template-columns:60px 1fr 130px 120px 80px 90px;padding:14px 20px;align-items:center;border-bottom:1px solid #f9fafb;transition:background .15s;}
+                .lb-thead{display:grid;grid-template-columns:60px 1fr 180px 120px 80px 90px;padding:12px 20px;border-bottom:1px solid #f3f4f6;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;background:#fafbff;}
+                .lb-row{display:grid;grid-template-columns:60px 1fr 180px 120px 80px 90px;padding:14px 20px;align-items:center;border-bottom:1px solid #f9fafb;transition:background .15s;}
                 .lb-row:last-child{border-bottom:none;}
                 .lb-row:hover{background:#fafbff;}
                 .lb-row.gold{background:rgba(245,158,11,.04);}
@@ -130,7 +219,20 @@ export default function Leaderboard() {
                 .lb-player{display:flex;align-items:center;gap:10px;}
                 .lb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'Fraunces',serif;flex-shrink:0;border:2px solid;}
                 .lb-name{font-size:14px;font-weight:600;color:#1e1b4b;}
-                .lb-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;border:1px solid;}
+                .lb-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  height:28px;              /* fixed height */
+  padding:0 12px;           /* horizontal padding only */
+
+  border-radius:999px;      /* perfect pill */
+  white-space:nowrap;       /* prevent breaking */
+  line-height:1;            /* remove vertical stretch */
+
+  font-size:12px;
+}
                 .lb-topic{font-size:13px;color:#6b7280;}
                 .lb-score{font-family:'Fraunces',serif;font-size:16px;font-weight:900;color:#6366f1;}
                 .lb-time{font-size:13px;color:#9ca3af;font-variant-numeric:tabular-nums;}
@@ -144,129 +246,342 @@ export default function Leaderboard() {
                 .lb-spinner{width:36px;height:36px;border:3px solid #e0e7ff;border-top-color:#6366f1;border-radius:50%;animation:lbs .8s linear infinite;}
                 @keyframes lbs{to{transform:rotate(360deg);}}
 
-                @media(max-width:800px){
-                    .lb-header,.lb-body{padding:32px 24px;}
-                    .lb-header-inner{flex-direction:column;align-items:flex-start;}
-                    .lb-select{min-width:160px;}
-                    .lb-podium{grid-template-columns:1fr;}
-                    .lb-thead,.lb-row{grid-template-columns:50px 1fr 80px 80px;}
-                    .lb-chip,.lb-topic{display:none;}
-                }
+              @media(max-width:800px){
+
+  .lb-thead{
+    display:none; /* hide header (better UX) */
+  }
+
+  .lb-row{
+    display:block;   /* remove grid */
+    padding:16px;
+  }
+
+  /* Row layout like card */
+  .lb-player{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+
+  .lb-chip{
+    display:inline-flex;
+    margin-top:6px;
+  }
+
+  .lb-score,
+  .lb-time{
+    display:inline-block;
+    margin-right:12px;
+    margin-top:6px;
+  }
+
+  .lb-rank{
+    margin-bottom:6px;
+    display:block;
+  }
+}
             `}</style>
 
-            <div className="lb">
-                {/* HEADER */}
-                <div className="lb-header">
-                    <div className="lb-header-inner">
-                        <div>
-                            <div className="lb-tag"><span className="lb-tag-dot" />Global Rankings</div>
-                            <h1 className="lb-title">The <em>Leaderboard</em></h1>
-                            <p className="lb-sub">Top players sorted by score &amp; speed</p>
-                        </div>
-
-                        {/* DROPDOWN */}
-                        <div className="lb-dropdown-wrap">
-                            <span className="lb-dropdown-label">Filter by subject</span>
-                            <div className="lb-dropdown-inner">
-                                <span className="lb-dropdown-icon">
-                                    {selectedSubject === "All" ? "🧠" : getIcon(selectedSubject)}
-                                </span>
-                                <select
-                                    className="lb-select"
-                                    value={selectedSubject}
-                                    onChange={e => setSelectedSubject(e.target.value)}
-                                >
-                                    <option value="All">All subjects ({entries.length})</option>
-                                    {subjects.map(s => (
-                                        <option key={s.name} value={s.name}>
-                                            {s.name} ({s.count})
-                                        </option>
-                                    ))}
-                                </select>
-                                <svg className="lb-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="6 9 12 15 18 9" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="lb-body">
-                    {/* PODIUM */}
-                    {top3.length >= 3 && (
-                        <div className="lb-podium">
-                            {/* 2nd */}
-                            <div className="lb-pod">
-                                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#9ca3af,#d1d5db)", borderRadius: "20px 20px 0 0" }} />
-                                <div className="lb-pod-emoji">🥈</div>
-                                <div className="lb-pod-av" style={{ background: "#f9fafb", color: "#9ca3af", borderColor: "#e5e7eb" }}>{getInitials(top3[1]?.name)}</div>
-                                <div className="lb-pod-name">{top3[1]?.name}</div>
-                                <div className="lb-pod-score" style={{ color: "#9ca3af" }}>{top3[1]?.score}/10</div>
-                                <div className="lb-pod-time">{Math.floor(top3[1]?.time_taken / 60)}m {top3[1]?.time_taken % 60}s</div>
-                            </div>
-                            {/* 1st */}
-                            <div className="lb-pod p1">
-                                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#f59e0b,#fcd34d)", borderRadius: "20px 20px 0 0" }} />
-                                <div className="lb-pod-emoji">🥇</div>
-                                <div className="lb-pod-av" style={{ background: "#fffbeb", color: "#f59e0b", borderColor: "#fde68a" }}>{getInitials(top3[0]?.name)}</div>
-                                <div className="lb-pod-name">{top3[0]?.name}</div>
-                                <div className="lb-pod-score" style={{ color: "#f59e0b" }}>{top3[0]?.score}/10</div>
-                                <div className="lb-pod-time">{Math.floor(top3[0]?.time_taken / 60)}m {top3[0]?.time_taken % 60}s</div>
-                            </div>
-                            {/* 3rd */}
-                            <div className="lb-pod">
-                                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#f97316,#fb923c)", borderRadius: "20px 20px 0 0" }} />
-                                <div className="lb-pod-emoji">🥉</div>
-                                <div className="lb-pod-av" style={{ background: "#fff7ed", color: "#f97316", borderColor: "#fed7aa" }}>{getInitials(top3[2]?.name)}</div>
-                                <div className="lb-pod-name">{top3[2]?.name}</div>
-                                <div className="lb-pod-score" style={{ color: "#f97316" }}>{top3[2]?.score}/10</div>
-                                <div className="lb-pod-time">{Math.floor(top3[2]?.time_taken / 60)}m {top3[2]?.time_taken % 60}s</div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="lb-eyebrow">Rankings</div>
-                    <div className="lb-sec-title">
-                        {selectedSubject === "All" ? "All Entries" : <>{getIcon(selectedSubject)} {selectedSubject}</>}
-                    </div>
-
-                    {filtered.length > 0 ? (
-                        <div className="lb-table">
-                            <div className="lb-thead">
-                                <span>Rank</span><span>Player</span><span>Subject</span><span>Topic</span><span>Score</span><span>Time</span>
-                            </div>
-                            {filtered.map((entry, i) => {
-                                const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
-                                const rc = i === 0 ? " gold" : i === 1 ? " silver" : i === 2 ? " bronze" : ""
-                                return (
-                                    <div key={i} className={`lb-row${rc}`}>
-                                        <span className="lb-rank">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}</span>
-                                        <div className="lb-player">
-                                            <div className="lb-av" style={{ background: ac.bg, color: ac.color, borderColor: ac.border }}>{getInitials(entry.name)}</div>
-                                            <span className="lb-name">{entry.name}</span>
-                                        </div>
-                                        <span>
-                                            <span className="lb-chip" style={{ background: ac.bg, color: ac.color, borderColor: ac.border }}>
-                                                <span style={{ fontSize: 12 }}>{getIcon(entry.subject_name)}</span>
-                                                {entry.subject_name}
-                                            </span>
-                                        </span>
-                                        <span className="lb-topic">{entry.topic_name}</span>
-                                        <span className="lb-score">{entry.score}/10</span>
-                                        <span className="lb-time">{Math.floor(entry.time_taken / 60)}m {String(entry.time_taken % 60).padStart(2, "0")}s</span>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ) : (
-                        <div className="lb-empty">
-                            <div className="lb-empty-icon">🏆</div>
-                            <div className="lb-empty-title">No entries yet</div>
-                            <p className="lb-empty-sub">Be the first to complete a quiz and claim the top spot!</p>
-                        </div>
-                    )}
-                </div>
+      <div className="lb">
+        {/* HEADER */}
+        <div className="lb-header">
+          <div className="lb-header-inner">
+            <div>
+              <div className="lb-tag">
+                <span className="lb-tag-dot" />
+                Global Rankings
+              </div>
+              <h1 className="lb-title">
+                The <em>Leaderboard</em>
+              </h1>
+              <p className="lb-sub">Top players sorted by score &amp; speed</p>
             </div>
-        </>
-    )
+
+            {/* CUSTOM DROPDOWN */}
+            <div className="lb-dropdown-wrap" ref={dropdownRef}>
+              <span className="lb-dropdown-label">Filter by subject</span>
+              <div style={{ position: "relative" }}>
+                <div
+                  className={`lb-select-btn${dropdownOpen ? " open" : ""}`}
+                  onClick={() => setDropdownOpen((o) => !o)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setDropdownOpen((o) => !o);
+                    }
+                    if (e.key === "Escape") setDropdownOpen(false);
+                  }}
+                  role="combobox"
+                  aria-expanded={dropdownOpen}
+                  aria-haspopup="listbox"
+                >
+                  <span className="lb-select-icon">
+                    {selectedSubject === "All"
+                      ? "🧠"
+                      : getIcon(selectedSubject)}
+                  </span>
+                  <span className="lb-select-text">
+                    {selectedSubject === "All"
+                      ? `All subjects (${entries.length})`
+                      : `${selectedSubject} (${selectedCount})`}
+                  </span>
+                  <svg
+                    className="lb-chevron-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+
+                {dropdownOpen && (
+                  <div className="lb-dropdown-menu" role="listbox">
+                    {/* All option */}
+                    <div
+                      className={`lb-option${selectedSubject === "All" ? " selected" : ""}`}
+                      role="option"
+                      aria-selected={selectedSubject === "All"}
+                      onClick={() => {
+                        setSelectedSubject("All");
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <span className="lb-option-icon">🧠</span>
+                      <span className="lb-option-label">All subjects</span>
+                      <span className="lb-option-count">{entries.length}</span>
+                    </div>
+                    <div className="lb-divider" />
+                    {subjects.map((s) => (
+                      <div
+                        key={s.name}
+                        className={`lb-option${selectedSubject === s.name ? " selected" : ""}`}
+                        role="option"
+                        aria-selected={selectedSubject === s.name}
+                        onClick={() => {
+                          setSelectedSubject(s.name);
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        <span className="lb-option-icon">
+                          {getIcon(s.name)}
+                        </span>
+                        <span className="lb-option-label">{s.name}</span>
+                        <span className="lb-option-count">{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="lb-body">
+          {/* PODIUM */}
+          {top3.length >= 3 && (
+            <div className="lb-podium">
+              {/* 2nd */}
+              <div className="lb-pod">
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: "linear-gradient(90deg,#9ca3af,#d1d5db)",
+                    borderRadius: "20px 20px 0 0",
+                  }}
+                />
+                <div className="lb-pod-emoji">🥈</div>
+                <div
+                  className="lb-pod-av"
+                  style={{
+                    background: "#f9fafb",
+                    color: "#9ca3af",
+                    borderColor: "#e5e7eb",
+                  }}
+                >
+                  {getInitials(top3[1]?.name)}
+                </div>
+                <div className="lb-pod-name">{top3[1]?.name}</div>
+                <div className="lb-pod-score" style={{ color: "#9ca3af" }}>
+                  {top3[1]?.score}/10
+                </div>
+                <div className="lb-pod-time">
+                  {Math.floor(top3[1]?.time_taken / 60)}m{" "}
+                  {top3[1]?.time_taken % 60}s
+                </div>
+              </div>
+              {/* 1st */}
+              <div className="lb-pod p1">
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: "linear-gradient(90deg,#f59e0b,#fcd34d)",
+                    borderRadius: "20px 20px 0 0",
+                  }}
+                />
+                <div className="lb-pod-emoji">🥇</div>
+                <div
+                  className="lb-pod-av"
+                  style={{
+                    background: "#fffbeb",
+                    color: "#f59e0b",
+                    borderColor: "#fde68a",
+                  }}
+                >
+                  {getInitials(top3[0]?.name)}
+                </div>
+                <div className="lb-pod-name">{top3[0]?.name}</div>
+                <div className="lb-pod-score" style={{ color: "#f59e0b" }}>
+                  {top3[0]?.score}/10
+                </div>
+                <div className="lb-pod-time">
+                  {Math.floor(top3[0]?.time_taken / 60)}m{" "}
+                  {top3[0]?.time_taken % 60}s
+                </div>
+              </div>
+              {/* 3rd */}
+              <div className="lb-pod">
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: "linear-gradient(90deg,#f97316,#fb923c)",
+                    borderRadius: "20px 20px 0 0",
+                  }}
+                />
+                <div className="lb-pod-emoji">🥉</div>
+                <div
+                  className="lb-pod-av"
+                  style={{
+                    background: "#fff7ed",
+                    color: "#f97316",
+                    borderColor: "#fed7aa",
+                  }}
+                >
+                  {getInitials(top3[2]?.name)}
+                </div>
+                <div className="lb-pod-name">{top3[2]?.name}</div>
+                <div className="lb-pod-score" style={{ color: "#f97316" }}>
+                  {top3[2]?.score}/10
+                </div>
+                <div className="lb-pod-time">
+                  {Math.floor(top3[2]?.time_taken / 60)}m{" "}
+                  {top3[2]?.time_taken % 60}s
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="lb-eyebrow">Rankings</div>
+          <div className="lb-sec-title">
+            {selectedSubject === "All" ? (
+              "All Entries"
+            ) : (
+              <>
+                {getIcon(selectedSubject)} {selectedSubject}
+              </>
+            )}
+          </div>
+
+          {filtered.length > 0 ? (
+            <div className="lb-table">
+              <div className="lb-thead">
+                <span>Rank</span>
+                <span>Player</span>
+                <span>Subject</span>
+                <span>Topic</span>
+                <span>Score</span>
+                <span>Time</span>
+              </div>
+              {filtered.map((entry, i) => {
+                const ac = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                const rc =
+                  i === 0
+                    ? " gold"
+                    : i === 1
+                      ? " silver"
+                      : i === 2
+                        ? " bronze"
+                        : "";
+                return (
+                  <div key={i} className={`lb-row${rc}`}>
+                    <span className="lb-rank">
+                      {i === 0
+                        ? "🥇"
+                        : i === 1
+                          ? "🥈"
+                          : i === 2
+                            ? "🥉"
+                            : `#${i + 1}`}
+                    </span>
+                    <div className="lb-player">
+                      <div
+                        className="lb-av"
+                        style={{
+                          background: ac.bg,
+                          color: ac.color,
+                          borderColor: ac.border,
+                        }}
+                      >
+                        {getInitials(entry.name)}
+                      </div>
+                      <span className="lb-name">{entry.name}</span>
+                    </div>
+                    <span>
+                      <span
+                        className="lb-chip"
+                        style={{
+                          background: ac.bg,
+                          color: ac.color,
+                          borderColor: ac.border,
+                        }}
+                      >
+                        <span style={{ fontSize: 12 }}>
+                          {getIcon(entry.subject_name)}
+                        </span>
+                        {entry.subject_name}
+                      </span>
+                    </span>
+                    <span className="lb-topic">{entry.topic_name}</span>
+                    <span className="lb-score">{entry.score}/10</span>
+                    <span className="lb-time">
+                      {Math.floor(entry.time_taken / 60)}m{" "}
+                      {String(entry.time_taken % 60).padStart(2, "0")}s
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="lb-empty">
+              <div className="lb-empty-icon">🏆</div>
+              <div className="lb-empty-title">No entries yet</div>
+              <p className="lb-empty-sub">
+                Be the first to complete a quiz and claim the top spot!
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
 }

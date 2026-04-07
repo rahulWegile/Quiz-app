@@ -49,6 +49,46 @@ export default function Quiz() {
   }, [])
 
   useEffect(() => {
+    const hasExpiring = upcomingSessions.some((s) => {
+      if (s.status !== "upcoming") return false;
+      return new Date(s.scheduled_at).getTime() - now.getTime() <= 0;
+    });
+
+    if (hasExpiring) {
+      fetch(`${API}/api/quiz/upcomingQuizzes`)
+        .then((r) => r.json())
+        .then((data) => setUpcomingSessions(data.data || []));
+    }
+  }, [now, upcomingSessions]);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const res = await fetch(`${API}/api/quiz/upcomingQuizzes`)
+        const data = await res.json()
+        setUpcomingSessions(data.data || [])
+      } catch { setUpcomingSessions([]) }
+
+      try {
+        const token = getToken(); if (!token) return
+        const res = await fetch(`${API}/api/quiz/myRegistrations`, { headers: { Authorization: `Bearer ${token}` } })
+        const data = await res.json()
+        if (data.success) setRegistered(data.data)
+      } catch {}
+
+      try {
+        const token = getToken(); if (!token) return
+        const res = await fetch(`${API}/api/quiz/myAttempts`, { headers: { Authorization: `Bearer ${token}` } })
+        const data = await res.json()
+        if (data.success) setAttempted(data.data)
+      } catch {}
+    }
+
+    const interval = setInterval(fetchAll, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
     const fetchSubjects = async () => {
       try {
         const res = await fetch(`${API}/api/getSubjects`)
@@ -92,7 +132,16 @@ export default function Quiz() {
     return `${s}s`
   }
 
-  const isRegistrationClosed = (scheduledAt: string) => now >= new Date(new Date(scheduledAt).getTime() - 2 * 60 * 1000)
+  // Registration is HARD CLOSED 2 minutes before scheduled time
+  const isRegistrationClosed = (scheduledAt: string) =>
+    now >= new Date(new Date(scheduledAt).getTime() - 2 * 60 * 1000)
+
+  // "Closing Soon" warning shown between 10 minutes and 2 minutes before scheduled time
+  const isClosingSoon = (scheduledAt: string) => {
+    const t = new Date(scheduledAt).getTime()
+    const nowMs = now.getTime()
+    return nowMs >= t - 10 * 60 * 1000 && nowMs < t - 2 * 60 * 1000
+  }
 
   const handleRegister = (session_id: string) => {
     const token = getToken()
@@ -114,14 +163,50 @@ export default function Quiz() {
   const renderActionButton = (session: UpcomingSession) => {
     const isReg = registered.includes(session.id)
     const regClosed = isRegistrationClosed(session.scheduled_at)
+    const closingSoon = isClosingSoon(session.scheduled_at)
+
+    // --- ACTIVE (live) session ---
     if (session.status === "active") {
-      if (attempted[session.id]) return <button className="qz-btn qz-btn-blue" onClick={() => router.push(`/quiz/result/${attempted[session.id]}`)}>View Result</button>
-      if (isReg) return <button className="qz-btn qz-btn-green" onClick={() => handleJoin(session.id)}>Join Now ⚡</button>
+      if (attempted[session.id])
+        return <button className="qz-btn qz-btn-blue" onClick={() => router.push(`/quiz/result/${attempted[session.id]}`)}>View Result</button>
+      if (isReg)
+        return <button className="qz-btn qz-btn-green" onClick={() => handleJoin(session.id)}>Join Now ⚡</button>
       return <span className="qz-chip qz-chip-red">Registration Closed</span>
     }
-    if (isReg) return <span className="qz-chip qz-chip-green">✓ Registered</span>
-    if (regClosed) return <span className="qz-chip qz-chip-yellow">Closing Soon</span>
-    return <button className="qz-btn qz-btn-purple" onClick={() => handleRegister(session.id)} disabled={registering === session.id}>{registering === session.id ? "Registering…" : "Register →"}</button>
+
+    // --- UPCOMING session ---
+    if (isReg)
+      return <span className="qz-chip qz-chip-green">✓ Registered</span>
+
+    // Hard closed (within 2 min of start)
+    if (regClosed)
+      return <span className="qz-chip qz-chip-red">Registration Closed</span>
+
+    // Soft warning (between 10 min and 2 min before start)
+    if (closingSoon)
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          <button
+            className="qz-btn qz-btn-purple"
+            onClick={() => handleRegister(session.id)}
+            disabled={registering === session.id}
+          >
+            {registering === session.id ? "Registering…" : "Register →"}
+          </button>
+          <span className="qz-chip qz-chip-yellow" style={{ fontSize: 10, padding: "3px 8px" }}>⚠️ Closing Soon</span>
+        </div>
+      )
+
+    // Normal open registration
+    return (
+      <button
+        className="qz-btn qz-btn-purple"
+        onClick={() => handleRegister(session.id)}
+        disabled={registering === session.id}
+      >
+        {registering === session.id ? "Registering…" : "Register →"}
+      </button>
+    )
   }
 
   if (loading) return (
@@ -289,9 +374,6 @@ export default function Quiz() {
               </div>
             </div>
           )}
-
-      
-         
         </div>
       </div>
     </>

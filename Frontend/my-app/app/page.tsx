@@ -350,9 +350,9 @@ export default function HomeLanding() {
   ];
 
   const stats = [
-    { value: 10000, suffix: "+", label: "Players", icon: "👥" },
-    { value: 500, suffix: "+", label: "Quiz Topics", icon: "📚" },
-    { value: 50000, suffix: "+", label: "Questions Answered", icon: "✅" },
+    { value: 100, suffix: "+", label: "Players", icon: "👥" },
+    { value: 50, suffix: "+", label: "Quiz Topics", icon: "📚" },
+    { value: 500, suffix: "+", label: "Questions Answered", icon: "✅" },
     { value: 99, suffix: "%", label: "Uptime", icon: "⚡" },
   ];
 
@@ -922,6 +922,7 @@ export default function HomeLanding() {
         }
         .sm-text-side {
           position: relative;
+          margin-left:10px;
         }
         .sm-step-text {
           padding: 8px 0;
@@ -1163,6 +1164,24 @@ export default function HomeLanding() {
       `}</style>
 
       <div className="landing">
+
+           {/* ═══ MARQUEE ═══ */}
+        <div className="marquee-wrap">
+          <div className="marquee-track">
+            {Array(3).fill(null).map((_, i) =>
+              marqueeTopics.map((t, j) => (
+                <span key={`${i}-${j}`} className="marquee-item">
+                  <span className="marquee-star" />
+                  {t}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+
+
+
+
         {/* Background elements */}
         <div className="bg-shapes">
           <motion.div className="bg-circle bg-circle-1" animate={{ x: [0, 30, -20, 0], y: [0, -20, 15, 0] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }} />
@@ -1288,19 +1307,7 @@ export default function HomeLanding() {
           </div>
         </motion.section>
 
-        {/* ═══ MARQUEE ═══ */}
-        <div className="marquee-wrap">
-          <div className="marquee-track">
-            {Array(3).fill(null).map((_, i) =>
-              marqueeTopics.map((t, j) => (
-                <span key={`${i}-${j}`} className="marquee-item">
-                  <span className="marquee-star" />
-                  {t}
-                </span>
-              ))
-            )}
-          </div>
-        </div>
+     
 
         {/* ═══ STATS ═══ */}
         <section className="stats-section">
