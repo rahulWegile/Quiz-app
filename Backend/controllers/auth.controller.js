@@ -23,12 +23,7 @@ if (!name || !email || !password) {
 }
     // for uploads
      const coverImageLocalPath =req.files?.profile_picture?.[0]?.path;
-    if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and password are required"
-            });
-        }
+ 
      let profile_picture = "";
 
     if (coverImageLocalPath) {
@@ -37,7 +32,7 @@ if (!name || !email || !password) {
       profile_picture = uploaded?.secure_url || "";
       }
 
-      const verification_code = Math.floor(10000 +Math.random()*10000).toString();
+      const verification_code = Math.floor(10000 +Math.random()*900000).toString();
 
         const user = await newUser(name, email, password, profile_picture,verification_code, null);
 
@@ -53,7 +48,6 @@ if (!name || !email || !password) {
   process.env.JWT_SECRET,
   { expiresIn: "1d" }
 );
-console.log("generated token:", accesToken)
 
 // res.cookie("session_token", accesToken, {
 //   httpOnly: false, // so JS can read it

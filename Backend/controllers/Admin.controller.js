@@ -117,6 +117,9 @@ export const getQues = async (req,res)=>{
 
     }catch(err){
         console.error(err);
+         return res.status(403).json({
+            success:"false",
+        })
         
     }
 }
@@ -166,7 +169,7 @@ export const   updateBulk  = async(req,res)=>{
         })
     }
 }
-//approve all questions
+//delete question
 export const   deleteQuestions  = async(req,res)=>{
     const question_id= req.params.id
     try{
@@ -175,13 +178,13 @@ export const   deleteQuestions  = async(req,res)=>{
 
 
         return res.status(200).json({
-            success:"true",
+            success:true,
             message:"questions updated",
             data:questions
         })
     }catch(err){
         return res.status(403).json({
-            success:"false",
+            success:false,
         })
     }
 }

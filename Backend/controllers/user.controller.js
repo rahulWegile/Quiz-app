@@ -98,7 +98,7 @@ export const upUser = async (req, res) => {
       await senderVerificationCode(email, code)
 
       return res.status(200).json({
-        success: false,
+        success: true,
         emailVerificationRequired: true,
         message: "Please verify your new email",
         email,

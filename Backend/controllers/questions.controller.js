@@ -49,13 +49,13 @@ export const postQuestions = async (req,res)=>{
     const uploaded_by=req.user.id
     try{
 
-        // const duplicate = await checkDuplicate(question_text)
-        // if(duplicate){
-        //     return res.status(403).json({
-        //     success:false,
-        //     message:"questions already exists"
-        // })
-        // }
+        const duplicate = await checkDuplicate(question_text)
+        if(duplicate){
+            return res.status(403).json({
+            success:false,
+            message:"questions already exists"
+        })
+        }
 
         const bulkquestions= await bulkUpload(questions,uploaded_by)
 

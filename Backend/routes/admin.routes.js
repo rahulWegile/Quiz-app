@@ -20,7 +20,6 @@ router.post('/getQuestions',verifyToken,getAllQuestionsAdmin)
 router.post('/updateBulk',verifyToken,updateBulk)
 router.get('/allquestion',verifyToken,getQues)
 router.delete('/deleteQuestions/:id',verifyToken,deleteQuestions)
-router.delete('/deleteQuestions/:id',verifyToken,deleteQuestions)
 router.put('/updateQuestion/:id', verifyToken, editQuestion)
 
 export default router
