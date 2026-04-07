@@ -22,19 +22,25 @@ export default function ScheduleQuiz() {
   const now = new Date();
 
   const getNowIST = () => {
-    const ist = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-    );
-    ist.setMinutes(ist.getMinutes() + 2);
-    let h24 = ist.getHours();
-    let min = ist.getMinutes();
-    min = Math.ceil(min / 5) * 5;
-    if (min === 60) { min = 0; h24 += 1; }
-    if (h24 === 24) h24 = 0;
-    const period: "AM" | "PM" = h24 >= 12 ? "PM" : "AM";
-    const h12 = h24 % 12 || 12;
-    return { h12, min, period, y: ist.getFullYear(), m: ist.getMonth(), d: ist.getDate() };
+  const ist = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  const h24 = ist.getHours();
+  const min = ist.getMinutes();
+
+  const period: "AM" | "PM" = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 || 12;
+
+  return {
+    h12,
+    min,
+    period,
+    y: ist.getFullYear(),
+    m: ist.getMonth(),
+    d: ist.getDate(),
   };
+};
 
   const initTime = getNowIST();
 
@@ -201,9 +207,9 @@ export default function ScheduleQuiz() {
 
   const changeMin = (dir: number) => {
     setSelMin((m) => {
-      let n = m + dir * 5;
+      let n = m + dir ;
       if (n >= 60) n = 0;
-      if (n < 0) n = 55;
+      if (n < 0) n = 59;
       setMinDraft(String(n).padStart(2, "0"));
       return n;
     });
@@ -636,9 +642,8 @@ export default function ScheduleQuiz() {
                               onBlur={() => {
                                 let v = parseInt(minDraft);
                                 if (isNaN(v) || v < 0) v = 0;
-                                if (v > 59) v = 59;
-                                v = Math.round(v / 5) * 5;
-                                if (v === 60) v = 55;
+                              if (isNaN(v) || v < 0) v = 0;
+if (v > 59) v = 59;
                                 setSelMin(v);
                                 setMinDraft(String(v).padStart(2, "0"));
                               }}

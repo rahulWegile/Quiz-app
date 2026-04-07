@@ -50,7 +50,7 @@ export default function Page() {
           href="/Auth/forget-pass"
           style={{
             display: "block",
-            backgroundColor: "#2563eb",
+            backgroundColor: "#7c3aed",
             color: "white",
             padding: "12px",
             borderRadius: "8px",

@@ -475,7 +475,8 @@ export default function BulkUpload() {
             <div className="bu-card-title">Paste JSON</div>
             <textarea
               className="bu-textarea"
-              placeholder='[{"question_text": "...", "option_a": "...", "option_b": "...", "option_c": "...", "option_d": "...", "correct_answer": "...", "difficulty": "easy"}]'
+              placeholder='[{"question_text": "...", "option_a": "...", "option_b": "...", "option_c": "...", "option_d": "...", "correct_answer": "...", "difficulty": "easy"}    
+              //correct answer should be complete option text , not like "option a"]'
               value={jsonText}
               onChange={(e) => setJsonText(e.target.value)}
             />
@@ -493,7 +494,10 @@ export default function BulkUpload() {
             <div className="bu-card-eyebrow">Option B</div>
             <div className="bu-card-title">Upload CSV File</div>
             <p className="bu-file-hint">
-              Headers: question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty
+              Headers: question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty 
+              <br />
+              correct answer should be complete option text , not like "option a"
+              
             </p>
             <label className="bu-file-label">
               📂 {file ? file.name : "Choose CSV File"}
